@@ -1,0 +1,325 @@
+---
+title: "Data Merging"
+output: html_notebook
+---
+
+## Loading in Data and Packages
+
+```{r, echo=F, warning=F, message=F}
+pacman::p_load(tidyverse, magrittr, countrycode, reshape2, car)
+
+#ess_1_7 <- haven::read_spss("C:/Users/Fabio/Google Drive/data/ess_1_7.sav")
+
+ess7 <- haven::read_spss("data/ESS7e02_1.sav")
+
+ess8 <- haven::read_spss("data/ESS8e01.sav")
+
+ess <- plyr::rbind.fill(ess7, ess8)
+
+ess %<>% 
+  mutate(cntry = countrycode::countrycode(cntry, "iso2c", "country.name")) %>% 
+  # mutate(cntryname = case_when(
+  #    is.na(cntryname) ~ "Russia",
+  #    TRUE ~ cntryname
+  #  )) %>% 
+  mutate(cntryround = paste(cntry, essround, sep = "_")) #%>% 
+
+
+table(ess$cntryround)
+table(ess$cntryname)
+table(ess$cntry)
+```
+
+# Merging the ESS
+
+```{r}
+
+cntry_keeps <- c("Austria_8","Belgium_8","Czech Republic_8", "Israel_8",
+                 "Denmark_7","Estonia_8","Finland_8","France_8","Germany_8","Hungary_7",
+                 "Iceland_8","Ireland_8","Lithuania_7","Netherlands_8","Norway_8","Poland_8",
+                 "Portugal_7","Russian Federation_8","Slovenia_8","Spain_7","Sweden_8","Switzerland_8",
+                 "United Kingdom of Great Britain and Northern Ireland_8")
+
+ess_dd <- ess %>% 
+  filter(cntryround %in% cntry_keeps) %>%
+  rename(
+#    demtoday = dmcntov,
+    age = agea,
+#    year = inwyys,
+    trust_gov = trstplt,
+    trust_parliament = trstprl,
+    trust_police = trstplc,
+    trust_courts = trstlgl
+  ) %>%
+  mutate(
+    income = 5 - hincfel,
+    educ = Recode(
+      eisced,
+      "55 = NA"
+    ),
+    work = ifelse(mnactic == 1, 1, 0),
+    sex = gndr - 1 # sex variable erstellen
+  )
+
+save(ess_dd, file = "ess_dd.Rdata")
+
+fit <- ess_dd %>% 
+  select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl) %>% 
+  psych::fa(nfactors = 2, rotate = "oblimin") 
+  
+ess_dd <- predict(fit, ess_dd %>% 
+  select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl)) %>% 
+  as.data.frame() %>% 
+  rename(external = MR2,
+         internal = MR1) %>% 
+  cbind(ess_dd)
+
+table(ess_dd$etapapl, ess_dd$cntry)
+
+
+12	psppsgv	Political system allows people to have a say in what government does
+13	actrolg	Able to take active role in political group
+14	psppipl	Political system allows people to have influence on politics
+15	cptppol	Confident in own ability to participate in politics
+16	ptcpplt	Politicians care what people think
+17	etapapl	Easy to take part in politics
+
+
+
+```
+
+# Merging Vdem
+
+## Data
+
+```{r}
+
+load("data/ess_dd.Rdata")
+
+euro88 <- haven::read_spss("data/euro88.sav")
+euro87 <- haven::read_spss("data/euro87.sav")
+cses4 <- haven::read_spss("data/cses4.sav")
+
+binoculaR::binoculaR(euro87)
+
+table(sjmisc::to_label(euro87$country))
+
+head(table(euro87$nutslvl))
+
+table(cses4$D1003)
+
+euro87 %<>% 
+  mutate(efficacy = case_when(
+    d72_2 == 1L ~ 1L,
+    d72_2 == 2L ~ 1L,
+    d72_2 == 3L ~ 0L,
+    d72_2 == 4L ~ 0L,
+    d72_2 == 5L ~ NA_integer_
+  )) %>% 
+  filter(nutslvl == 2)
+
+euro87 %<>% 
+  mutate(cntry = countrycode::countrycode(isocntry, "iso2c", "country.name"))  
+
+cses4 %<>% 
+  mutate(cntry = countrycode::countrycode(D1006_NAM, "country.name", "country.name"))    
+
+table(cses4$cntry)
+
+cses4 %<>% 
+  mutate(inpower = ifelse(D3009 > 5, NA, D3009)) %>% 
+  mutate(votefor = ifelse(D3010 > 5, NA, D3010)) %>%
+  mutate(item1 = ifelse(D3025_1_A > 5, NA, D3025_1_A)) %>% 
+  mutate(item1 = ifelse(D3025_1_A == 5, 0, 1)) %>% 
+  mutate(item2 = ifelse(D3025_2_A > 5, NA, D3025_2_A)) %>% 
+  mutate(item2 = ifelse(D3025_2_A == 5, 0, 1)) %>% 
+  mutate(item3 = ifelse(D3025_3_A > 5, NA, D3025_3_A)) %>% 
+  mutate(item3 = ifelse(D3025_3_A == 5, 0, 1)) %>% 
+  mutate(item4 = ifelse(D3025_4_A > 5, NA, D3025_4_A)) %>% 
+  mutate(item4 = ifelse(D3025_4_A == 5, 0, 1)) %>% 
+  mutate(knowledge = item1+item2+item3+item4) %>% 
+  mutate(knowledge2 = ifelse(knowledge>1,1,0)) %>% 
+  mutate(matters = (inpower + votefor)/2) #%>%
+#  select(inpower, votefor) %>% cor()
+
+D3025_1_A
+D3025_2_A
+D3025_3_A
+D3025_4_A
+table(cses4$knowledge)
+
+table(euro87$isocntry)
+```
+
+# Packages
+
+```{r}
+
+#dput(unique(ess_dd$cntry))
+#dput(unique(euro87$cntry))
+dput(unique(cses4$cntry))
+
+cses4_cntrys <- c("Australia", "Austria", "Brazil", "Bulgaria", "Canada", "Taiwan, Province of China", 
+"Czech Republic", "Finland", "France", "Germany", "Greece", "Hong Kong", 
+"Iceland", "Ireland", "Israel", "Japan", "Kenya", "Republic of Korea", 
+"Mexico", "Montenegro", "New Zealand", "Norway", "Philippines", 
+"Poland", "Portugal", "Romania", "Serbia", "Slovakia", "Slovenia", 
+"South Africa", "Sweden", "Switzerland", "Thailand", "Turkey", 
+"United Kingdom of Great Britain and Northern Ireland", "United States of America"
+)
+
+euro87_cntry <- c("Belgium", "Denmark", "Greece", "Spain", "Finland", "France", 
+"Ireland", "Italy", "Luxembourg", "Netherlands", "Austria", "Portugal", 
+"Sweden", NA, "Bulgaria", "Cyprus", "Czech Republic", "Estonia", 
+"Hungary", "Latvia", "Lithuania", "Malta", "Poland", "Romania", 
+"Slovakia", "Slovenia", "Turkey", "Croatia", "The former Yugoslav Republic of Macedonia", 
+"Montenegro", "Serbia", "Albania")
+
+ess_cntrys <- c("Denmark", "Spain", "Hungary", "Lithuania", "Portugal", "Austria", 
+"Belgium", "Switzerland", "Czech Republic", "Germany", "Estonia", 
+"Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
+"Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
+"Russian Federation", "Sweden", "Slovenia")
+
+table(ess_dd$inwyys, ess_dd$cntry)
+table(ess_dd$inwyye, ess_dd$cntry)
+table(ess_dd$proddate, ess_dd$cntry)
+table(ess_dd$cntryname)
+
+ff <- ess_dd %>% 
+  mutate(ys = inwyys %>% as.numeric - 6) %>% 
+  mutate(ye = inwyys %>% as.numeric - 1) %>% 
+  mutate(needed_years = paste0(ys,":",ye))
+
+
+table(ff$ys)
+table(ff$inwyys)
+table(ff$needed_years)
+
+load("data/vdems_start.Rdata")
+
+vdems_sub <- vdems_start %>% 
+#  filter(year %in% 2008:2016) %>% 
+  filter(year %in% 2009:2014) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntryear = paste(cntry, year, sep = "_")) %>%
+  filter(cntry %in% cses4_cntrys)
+
+vdem <- vdems_sub %>% 
+  group_by(cntry) %>%
+  tally %>%
+  mutate(cntry = unique(cntry)) %>%
+  #DD Variable
+  mutate(direct_dem = vdems_sub %>%
+           dcast(country_name ~ year, 
+                 value.var=c("v2xdd_dd")) %>%
+           select(`2009`:`2014`) %>%
+           rowMeans) %>%
+  mutate(pop10 = vdems_sub %>% 
+           dcast(country_name ~ year, 
+                 value.var=c("e_mipopula")) %>%
+           select(`2009`:`2014`) %>%
+           rowMeans) %>%
+  mutate(corruption10 = vdems_sub %>% 
+           dcast(country_name ~ year, 
+                 value.var=c("v2x_corr")) %>%
+           select(`2009`:`2014`) %>%
+           rowMeans) 
+
+```
+
+# Merging
+
+```{r}
+combined <- euro87 %>% 
+  left_join(vdem, by = "cntry") 
+
+fit1 <- lme4::glmer(efficacy ~ direct_dem + (1|cntry), data = combined, family = "binomial")
+texreg::screenreg(fit1)
+plot_model(model = fit1, show.data = T, type = "pred",  terms = "direct_dem")
+
+combined <- cses4 %>% 
+  left_join(vdem, by = "cntry") 
+
+fit2 <- lme4::lmer(matters ~ direct_dem + knowledge2 + direct_dem*knowledge2 + (1|cntry), data = combined)
+texreg::screenreg(fit2)
+plot_model(fit2, show.data = T, type = "pred",  terms = "direct_dem")
+
+plot_model(fit2, type = "int")
+```
+
+
+# Loading Data
+
+
+
+```{r}
+
+vdem %>%
+  ggplot(aes(direct_dem)) +
+  geom_histogram()
+
+mean(vdem$direct_dem, na.rm = T)
+sd(vdem$direct_dem, na.rm = T) 
+
+vdem %>%
+  select(cntry, year, v2xdd_dd) %>%
+  arrange(desc(v2xdd_dd))
+```
+
+# Map
+
+```{r}
+# install necessary packages
+pacman::p_load(maptools, doBy, gpclib)
+library(dplyr)
+library(maptools)
+library(ggplot2)
+#library(ggmap)  # only for superimposing with Google maps
+library(doBy)
+
+# to make fortify possible without errors
+library(gpclib)
+#install.packages("gpclib")
+gpclibPermit()
+
+# requires downloading and unzipping NUTS_2013_01M_SH.zip from
+# http://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/administrative-units-statistical-units
+eurMap <- readShapeSpatial("data/NUTS_2013_01M_SH/data/NUTS_RG_01M_2013.shp")
+
+# only main adm level
+eurMap <- subset(eurMap, nchar(as.character(NUTS_ID)) == 2)
+
+# EL for Grece, UK for United Kingdom
+eurMapDf <- fortify(eurMap, region='NUTS_ID')
+
+# we assume two columns: CountryCode and NGA_Coverage
+#eurData <- read.csv("./NGA_coverage-ISO2.csv", stringsAsFactors = F)
+
+euro87 %<>% 
+  mutate(CountryCode = countrycode(cntry, "country.name", "iso2c"))
+
+# merge map and data
+eurMapDataDf <- merge(eurMapDf, euro87, by.x="id", by.y="CountryCode")
+# sort, so that polygons are drawn correctly
+eurMapDataDf <- eurMapDataDf[order(eurMapDataDf$order),]
+
+# limit data to main Europe
+eurMapDataDf <- subset(eurMapDataDf, long > -15 & long < 32 & lat > 34 & lat < 75)
+
+# add text; instead of mean I do middle (not to be to biased towards detailed coastlines)
+middle = function (x) {
+  (max(x) + min(x)) / 2
+}  
+txtVal <- summaryBy(long + lat + NGA_Coverage ~ id, data=eurMapDataDf, FUN=middle, keep.names=T)
+
+# inverse order (to have visible borders)
+p <- ggplot(data=eurMapDataDf) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill=NGA_Coverage)) +
+  geom_path(aes(x=long, y=lat, group=group), color='black', alpha=.5) +
+  geom_text(aes(x=long, y=lat, label=sprintf("%.0f%%", NGA_Coverage)), data=txtVal, col="gray", cex=3) +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue") +
+  theme_bw() +
+  coord_equal()
+```
+

@@ -1,0 +1,49 @@
+---
+title: "Vdem Direct Democracy"
+output: html_notebook
+---
+
+# Loading Data
+
+```{r}
+load("C:/Users/SOWI/Desktop/vdems_start.Rdata")
+load("C:/Users/SOWI/Desktop/ess.Rdata")
+```
+
+# Packages
+
+```{r}
+pacman::p_load(tidyverse, countrycode)
+
+
+```
+
+```{r}
+
+
+ess_merge <- ess %>%
+  mutate(cntry = countrycode::countrycode(cntryname, "country.name", "country.name"))
+
+ess
+
+country_wants <- c("Albania", "Andorra", "Armenia", "Austria", "Azerbaijan", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "C", "Croatia", "Cyprus", "Czech Republic", "D", "Denmark", "E", "Estonia", "F", "Finland", "France", "G", "Georgia", "Germany", "Greece", "Hungary", "I", "Iceland", "Ireland", "Italy", "K", "Kazakhstan", "Kosovo", "L", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "M", "Macedonia (FYROM)", "Malta", "Moldova", "Monaco", "Montenegro", "N", "Netherlands", "Norway", NA, "P", "Poland", "Portugal", "R", "Romania", "Russia", "S", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "T", "Turkey", "U", "Ukraine", "United Kingdom (UK)", "V", "Vatican City (Holy See)", NA)
+
+directs <- vdems_start %>%
+  filter(year == "2016") %>%
+  filter(country_name %in% country_wants) %>%
+  select(country_name, v2xdd_dd) #%>%
+
+
+
+directs %>%
+  ggplot(aes(v2xdd_dd)) +
+  geom_histogram()
+
+mean(directs$v2xdd_dd, na.rm = T)
+sd(directs$v2xdd_dd, na.rm = T) 
+
+vdems_start %>%
+  select(country_name, year, v2xdd_dd) %>%
+  arrange(desc(v2xdd_dd))
+```
+
