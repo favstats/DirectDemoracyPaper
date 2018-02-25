@@ -5,18 +5,23 @@ output: html_notebook
 
 ## Loading in Data and Packages
 
-```{r, echo=F, warning=F, message=F}
+```{r}
 pacman::p_load(tidyverse, magrittr, countrycode, reshape2, car)
+```
 
-#ess_1_7 <- haven::read_spss("C:/Users/Fabio/Google Drive/data/ess_1_7.sav")
 
-ess7 <- haven::read_spss("data/ESS7e02_1.sav")
+```{r, echo=F, warning=F, message=F}
+
+
+ess_1_7 <- haven::read_spss("C:/Users/Fabio/OneDrive/data/ess5_7.sav")
+
+#ess7 <- haven::read_spss("data/ESS7e02_1.sav")
 
 ess8 <- haven::read_spss("data/ESS8e01.sav")
 
-ess <- plyr::rbind.fill(ess7, ess8)
+ess_dd <- plyr::rbind.fill(ess_1_7, ess8)
 
-ess %<>% 
+ess_dd %<>% 
   mutate(cntry = countrycode::countrycode(cntry, "iso2c", "country.name")) %>% 
   # mutate(cntryname = case_when(
   #    is.na(cntryname) ~ "Russia",
@@ -24,8 +29,9 @@ ess %<>%
   #  )) %>% 
   mutate(cntryround = paste(cntry, essround, sep = "_")) #%>% 
 
+#save(ess_dd, file = "data/ess_dd.Rdata")
 
-table(ess$cntryround)
+dput(unique(ess_dd$cntryround))
 table(ess$cntryname)
 table(ess$cntry)
 ```
@@ -34,16 +40,13 @@ table(ess$cntry)
 
 ```{r}
 
-cntry_keeps <- c("Austria_8","Belgium_8","Czech Republic_8", "Israel_8",
-                 "Denmark_7","Estonia_8","Finland_8","France_8","Germany_8","Hungary_7",
-                 "Iceland_8","Ireland_8","Lithuania_7","Netherlands_8","Norway_8","Poland_8",
-                 "Portugal_7","Russian Federation_8","Slovenia_8","Spain_7","Sweden_8","Switzerland_8",
-                 "United Kingdom of Great Britain and Northern Ireland_8")
+cntry_keeps <- c("Bulgaria_6", "Cyprus_6", "Denmark_7", "Estonia_7", "Spain_7", "Greece_5", "Croatia_5", "Hungary_7", "Italy_6", "Lithuania_7", "Portugal_7", "Slovakia_6", "Ukraine_6", "Austria_8", "Belgium_8", "Switzerland_8", "Czech Republic_8", "Germany_8", "Estonia_8", "Finland_8", "France_8", "United Kingdom of Great Britain and Northern Ireland_8", "Ireland_8", "Israel_8", "Iceland_8", "Netherlands_8", "Norway_8", "Poland_8", "Russian Federation_8", "Sweden_8", "Slovenia_8")
 
-ess_dd <- ess %>% 
+
+ess_dd <- ess_dd %>% 
   filter(cntryround %in% cntry_keeps) %>%
   rename(
-#    demtoday = dmcntov,
+    demsat = stfdem,
     age = agea,
 #    year = inwyys,
     trust_gov = trstplt,
@@ -61,30 +64,31 @@ ess_dd <- ess %>%
     sex = gndr - 1 # sex variable erstellen
   )
 
-save(ess_dd, file = "ess_dd.Rdata")
+table(ess_dd$polintr)
 
-fit <- ess_dd %>% 
-  select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl) %>% 
-  psych::fa(nfactors = 2, rotate = "oblimin") 
-  
-ess_dd <- predict(fit, ess_dd %>% 
-  select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl)) %>% 
-  as.data.frame() %>% 
-  rename(external = MR2,
-         internal = MR1) %>% 
-  cbind(ess_dd)
+save(ess_dd, file = "data/ess_dd.Rdata")
 
-table(ess_dd$etapapl, ess_dd$cntry)
+# hist(ess_dd$demsat)
 
+# fit <- ess_dd %>% 
+#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl) %>% 
+#   psych::fa(nfactors = 2, rotate = "oblimin") 
+#   
+# ess_dd <- predict(fit, ess_dd %>% 
+#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl)) %>% 
+#   as.data.frame() %>% 
+#   rename(external = MR2,
+#          internal = MR1) %>% 
+#   cbind(ess_dd)
 
-12	psppsgv	Political system allows people to have a say in what government does
-13	actrolg	Able to take active role in political group
-14	psppipl	Political system allows people to have influence on politics
-15	cptppol	Confident in own ability to participate in politics
-16	ptcpplt	Politicians care what people think
-17	etapapl	Easy to take part in politics
+# table(ess_dd$etapapl, ess_dd$cntry)
 
-
+# 12	psppsgv	Political system allows people to have a say in what government does
+# 13	actrolg	Able to take active role in political group
+# 14	psppipl	Political system allows people to have influence on politics
+# 15	cptppol	Confident in own ability to participate in politics
+# 16	ptcpplt	Politicians care what people think
+# 17	etapapl	Easy to take part in politics
 
 ```
 
@@ -96,105 +100,30 @@ table(ess_dd$etapapl, ess_dd$cntry)
 
 load("data/ess_dd.Rdata")
 
-euro88 <- haven::read_spss("data/euro88.sav")
-euro87 <- haven::read_spss("data/euro87.sav")
-cses4 <- haven::read_spss("data/cses4.sav")
 
-binoculaR::binoculaR(euro87)
-
-table(sjmisc::to_label(euro87$country))
-
-head(table(euro87$nutslvl))
-
-table(cses4$D1003)
-
-euro87 %<>% 
-  mutate(efficacy = case_when(
-    d72_2 == 1L ~ 1L,
-    d72_2 == 2L ~ 1L,
-    d72_2 == 3L ~ 0L,
-    d72_2 == 4L ~ 0L,
-    d72_2 == 5L ~ NA_integer_
-  )) %>% 
-  filter(nutslvl == 2)
-
-euro87 %<>% 
-  mutate(cntry = countrycode::countrycode(isocntry, "iso2c", "country.name"))  
-
-cses4 %<>% 
-  mutate(cntry = countrycode::countrycode(D1006_NAM, "country.name", "country.name"))    
-
-table(cses4$cntry)
-
-cses4 %<>% 
-  mutate(inpower = ifelse(D3009 > 5, NA, D3009)) %>% 
-  mutate(votefor = ifelse(D3010 > 5, NA, D3010)) %>%
-  mutate(item1 = ifelse(D3025_1_A > 5, NA, D3025_1_A)) %>% 
-  mutate(item1 = ifelse(D3025_1_A == 5, 0, 1)) %>% 
-  mutate(item2 = ifelse(D3025_2_A > 5, NA, D3025_2_A)) %>% 
-  mutate(item2 = ifelse(D3025_2_A == 5, 0, 1)) %>% 
-  mutate(item3 = ifelse(D3025_3_A > 5, NA, D3025_3_A)) %>% 
-  mutate(item3 = ifelse(D3025_3_A == 5, 0, 1)) %>% 
-  mutate(item4 = ifelse(D3025_4_A > 5, NA, D3025_4_A)) %>% 
-  mutate(item4 = ifelse(D3025_4_A == 5, 0, 1)) %>% 
-  mutate(knowledge = item1+item2+item3+item4) %>% 
-  mutate(knowledge2 = ifelse(knowledge>1,1,0)) %>% 
-  mutate(matters = (inpower + votefor)/2) #%>%
-#  select(inpower, votefor) %>% cor()
-
-D3025_1_A
-D3025_2_A
-D3025_3_A
-D3025_4_A
-table(cses4$knowledge)
-
-table(euro87$isocntry)
-```
-
-# Packages
-
-```{r}
-
+binoculaR::binoculaR(ess_dd)
 #dput(unique(ess_dd$cntry))
-#dput(unique(euro87$cntry))
-dput(unique(cses4$cntry))
 
-cses4_cntrys <- c("Australia", "Austria", "Brazil", "Bulgaria", "Canada", "Taiwan, Province of China", 
-"Czech Republic", "Finland", "France", "Germany", "Greece", "Hong Kong", 
-"Iceland", "Ireland", "Israel", "Japan", "Kenya", "Republic of Korea", 
-"Mexico", "Montenegro", "New Zealand", "Norway", "Philippines", 
-"Poland", "Portugal", "Romania", "Serbia", "Slovakia", "Slovenia", 
-"South Africa", "Sweden", "Switzerland", "Thailand", "Turkey", 
-"United Kingdom of Great Britain and Northern Ireland", "United States of America"
-)
-
-euro87_cntry <- c("Belgium", "Denmark", "Greece", "Spain", "Finland", "France", 
-"Ireland", "Italy", "Luxembourg", "Netherlands", "Austria", "Portugal", 
-"Sweden", NA, "Bulgaria", "Cyprus", "Czech Republic", "Estonia", 
-"Hungary", "Latvia", "Lithuania", "Malta", "Poland", "Romania", 
-"Slovakia", "Slovenia", "Turkey", "Croatia", "The former Yugoslav Republic of Macedonia", 
-"Montenegro", "Serbia", "Albania")
-
-ess_cntrys <- c("Denmark", "Spain", "Hungary", "Lithuania", "Portugal", "Austria", 
-"Belgium", "Switzerland", "Czech Republic", "Germany", "Estonia", 
-"Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
+ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece", 
+"Croatia", "Hungary", "Italy", "Lithuania", "Portugal", "Slovakia", 
+"Ukraine", "Austria", "Belgium", "Switzerland", "Czech Republic", 
+"Germany", "Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
 "Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
 "Russian Federation", "Sweden", "Slovenia")
 
 table(ess_dd$inwyys, ess_dd$cntry)
 table(ess_dd$inwyye, ess_dd$cntry)
 table(ess_dd$proddate, ess_dd$cntry)
-table(ess_dd$cntryname)
+table(ess_dd$cntry)
 
-ff <- ess_dd %>% 
-  mutate(ys = inwyys %>% as.numeric - 6) %>% 
-  mutate(ye = inwyys %>% as.numeric - 1) %>% 
-  mutate(needed_years = paste0(ys,":",ye))
-
-
-table(ff$ys)
-table(ff$inwyys)
-table(ff$needed_years)
+# ff <- ess_dd %>% 
+#   mutate(ys = inwyys %>% as.numeric - 6) %>% 
+#   mutate(ye = inwyys %>% as.numeric - 1) %>% 
+#   mutate(needed_years = paste0(ys,":",ye))
+# 
+# table(ff$ys)
+# table(ff$inwyys)
+# table(ff$needed_years)
 
 load("data/vdems_start.Rdata")
 
@@ -203,7 +132,7 @@ vdems_sub <- vdems_start %>%
   filter(year %in% 2009:2014) %>% 
   mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
   mutate(cntryear = paste(cntry, year, sep = "_")) %>%
-  filter(cntry %in% cses4_cntrys)
+  filter(cntry %in% ess_cntrys)
 
 vdem <- vdems_sub %>% 
   group_by(cntry) %>%
@@ -228,24 +157,19 @@ vdem <- vdems_sub %>%
 
 ```
 
-# Merging
+# Model
 
 ```{r}
-combined <- euro87 %>% 
-  left_join(vdem, by = "cntry") 
+combined <- vdem %>% 
+  left_join(ess_dd, by = "cntry") 
 
-fit1 <- lme4::glmer(efficacy ~ direct_dem + (1|cntry), data = combined, family = "binomial")
+
+
+fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + direct_dem*polintr + (1|cntry), data = combined)
 texreg::screenreg(fit1)
-plot_model(model = fit1, show.data = T, type = "pred",  terms = "direct_dem")
+sjPlot::plot_model(fit1, show.data = T, type = "pred",  terms = "direct_dem")
 
-combined <- cses4 %>% 
-  left_join(vdem, by = "cntry") 
-
-fit2 <- lme4::lmer(matters ~ direct_dem + knowledge2 + direct_dem*knowledge2 + (1|cntry), data = combined)
-texreg::screenreg(fit2)
-plot_model(fit2, show.data = T, type = "pred",  terms = "direct_dem")
-
-plot_model(fit2, type = "int")
+sjPlot::plot_model(fit1, type = "int")
 ```
 
 
@@ -321,5 +245,95 @@ p <- ggplot(data=eurMapDataDf) +
   scale_fill_gradient2(low = "red", mid = "white", high = "blue") +
   theme_bw() +
   coord_equal()
+```
+
+# Crap
+
+```{r}
+
+load("data/ess_dd.Rdata")
+
+euro88 <- haven::read_spss("data/euro88.sav")
+euro87 <- haven::read_spss("data/euro87.sav")
+cses4 <- haven::read_spss("data/cses4.sav")
+
+
+
+table(sjmisc::to_label(euro87$country))
+
+head(table(euro87$nutslvl))
+
+table(cses4$D1003)
+
+euro87 %<>% 
+  mutate(efficacy = case_when(
+    d72_2 == 1L ~ 1L,
+    d72_2 == 2L ~ 1L,
+    d72_2 == 3L ~ 0L,
+    d72_2 == 4L ~ 0L,
+    d72_2 == 5L ~ NA_integer_
+  )) %>% 
+  filter(nutslvl == 2)
+
+euro87 %<>% 
+  mutate(cntry = countrycode::countrycode(isocntry, "iso2c", "country.name"))  
+
+cses4 %<>% 
+  mutate(cntry = countrycode::countrycode(D1006_NAM, "country.name", "country.name"))    
+
+table(cses4$cntry)
+
+cses4 %<>% 
+  mutate(inpower = ifelse(D3009 > 5, NA, D3009)) %>% 
+  mutate(votefor = ifelse(D3010 > 5, NA, D3010)) %>%
+  mutate(item1 = ifelse(D3025_1_A > 5, NA, D3025_1_A)) %>% 
+  mutate(item1 = ifelse(D3025_1_A == 5, 0, 1)) %>% 
+  mutate(item2 = ifelse(D3025_2_A > 5, NA, D3025_2_A)) %>% 
+  mutate(item2 = ifelse(D3025_2_A == 5, 0, 1)) %>% 
+  mutate(item3 = ifelse(D3025_3_A > 5, NA, D3025_3_A)) %>% 
+  mutate(item3 = ifelse(D3025_3_A == 5, 0, 1)) %>% 
+  mutate(item4 = ifelse(D3025_4_A > 5, NA, D3025_4_A)) %>% 
+  mutate(item4 = ifelse(D3025_4_A == 5, 0, 1)) %>% 
+  mutate(knowledge = item1+item2+item3+item4) %>% 
+  mutate(knowledge2 = ifelse(knowledge>1,1,0)) %>% 
+  mutate(matters = (inpower + votefor)/2) #%>%
+#  select(inpower, votefor) %>% cor()
+
+D3025_1_A
+D3025_2_A
+D3025_3_A
+D3025_4_A
+table(cses4$knowledge)
+
+table(euro87$isocntry)
+
+
+
+#dput(unique(ess_dd$cntry))
+#dput(unique(euro87$cntry))
+dput(unique(cses4$cntry))
+
+cses4_cntrys <- c("Australia", "Austria", "Brazil", "Bulgaria", "Canada", "Taiwan, Province of China", 
+"Czech Republic", "Finland", "France", "Germany", "Greece", "Hong Kong", 
+"Iceland", "Ireland", "Israel", "Japan", "Kenya", "Republic of Korea", 
+"Mexico", "Montenegro", "New Zealand", "Norway", "Philippines", 
+"Poland", "Portugal", "Romania", "Serbia", "Slovakia", "Slovenia", 
+"South Africa", "Sweden", "Switzerland", "Thailand", "Turkey", 
+"United Kingdom of Great Britain and Northern Ireland", "United States of America"
+)
+
+euro87_cntry <- c("Belgium", "Denmark", "Greece", "Spain", "Finland", "France", 
+"Ireland", "Italy", "Luxembourg", "Netherlands", "Austria", "Portugal", 
+"Sweden", NA, "Bulgaria", "Cyprus", "Czech Republic", "Estonia", 
+"Hungary", "Latvia", "Lithuania", "Malta", "Poland", "Romania", 
+"Slovakia", "Slovenia", "Turkey", "Croatia", "The former Yugoslav Republic of Macedonia", 
+"Montenegro", "Serbia", "Albania")
+
+fit1 <- lme4::glmer(efficacy ~ direct_dem + (1|cntry), data = combined, family = "binomial")
+texreg::screenreg(fit1)
+plot_model(model = fit1, show.data = T, type = "pred",  terms = "direct_dem")
+
+combined <- cses4 %>% 
+  left_join(vdem, by = "cntry") 
 ```
 
