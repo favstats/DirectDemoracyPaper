@@ -101,7 +101,7 @@ save(ess_dd, file = "data/ess_dd.Rdata")
 load("data/ess_dd.Rdata")
 
 
-binoculaR::binoculaR(ess_dd)
+#binoculaR::binoculaR(ess_dd)
 #dput(unique(ess_dd$cntry))
 
 ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece", 
@@ -111,10 +111,10 @@ ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece",
 "Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
 "Russian Federation", "Sweden", "Slovenia")
 
-table(ess_dd$inwyys, ess_dd$cntry)
-table(ess_dd$inwyye, ess_dd$cntry)
-table(ess_dd$proddate, ess_dd$cntry)
-table(ess_dd$cntry)
+# table(ess_dd$inwyys, ess_dd$cntry)
+# table(ess_dd$inwyye, ess_dd$cntry)
+# table(ess_dd$proddate, ess_dd$cntry)
+# table(ess_dd$cntry)
 
 # ff <- ess_dd %>% 
 #   mutate(ys = inwyys %>% as.numeric - 6) %>% 
@@ -161,19 +161,23 @@ vdem <- vdems_sub %>%
 
 ```{r}
 combined <- vdem %>% 
-  left_join(ess_dd, by = "cntry") 
+  left_join(ess_dd, by = "cntry") %>% 
+  mutate_at(vars(demsat, age, income, work, educ, work, polintr), as.numeric) %>% 
+  mutate(polintr = 5 - polintr) %>% 
+  filter(!(cntry %in% c("Switzerland", "Slovenia")))
 
 
 
-fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + direct_dem*polintr + (1|cntry), data = combined)
+fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + polintr + polintr*direct_dem + (1|cntry), data = combined)
 texreg::screenreg(fit1)
 sjPlot::plot_model(fit1, show.data = T, type = "pred",  terms = "direct_dem")
 
 sjPlot::plot_model(fit1, type = "int")
+sjPlot::sjp.int(fit1, p.kr = F, swap.pred = F)
 ```
 
 
-# Loading Data
+# Descriptive
 
 
 
@@ -183,12 +187,16 @@ vdem %>%
   ggplot(aes(direct_dem)) +
   geom_histogram()
 
+# table(combined$direct_dem, combin)
+
 mean(vdem$direct_dem, na.rm = T)
 sd(vdem$direct_dem, na.rm = T) 
 
-vdem %>%
-  select(cntry, year, v2xdd_dd) %>%
-  arrange(desc(v2xdd_dd))
+combined %>%
+  select(cntry, direct_dem) %>%
+  group_by(cntry) %>% 
+  dplyr::slice(1) %>% 
+  arrange(desc(direct_dem))
 ```
 
 # Map
