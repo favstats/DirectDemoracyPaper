@@ -36,7 +36,52 @@ table(ess$cntryname)
 table(ess$cntry)
 ```
 
-# Merging the ESS
+# Idea
+
+```{r}
+idea <- readxl::read_xls("data/idea.xls")
+
+idea
+
+table(idea$`General > Legal provisions for mandatory referendums at national level`)
+table(idea$`General > Legal provisions for optional referendums at national level`)
+table(idea$`General > Legal provisions for citizens' initiatives at national level`)
+table(idea$`General > Legal provisions for agenda initiatives at national level`)
+table(idea$general_legal_provisions_for_direct_democracy_at_the_regional_level)
+table(idea$`General > Legal provisions for direct democracy at the local level`)
+table(idea$`General > Legal basis for direct democracy at the national level`)
+
+idea %<>% 
+  janitor::clean_names() %>% 
+  mutate(dd_dummy = case_when(
+    general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" ~ 1L,
+    general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" ~ 1L, 
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
+    TRUE ~ 0L
+  ))
+
+idea %<>% 
+  mutate(dd_dummy = case_when(
+    general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" &
+    general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" &
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
+    TRUE ~ 0L
+  ))
+
+idea %<>% 
+  mutate(dd_regional = ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level %in% c("No data", "Not applicable"), NA, ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level == "No", 0, 1)))
+
+table(idea$dd_regional)
+
+idea %<>% 
+  mutate(cntry = countrycode::countrycode(country, "country.name", "country.name"))
+
+```
+
+
+# Merging the ESS and Recode
 
 ```{r}
 
@@ -47,15 +92,15 @@ ess_dd <- ess_dd %>%
   filter(cntryround %in% cntry_keeps) %>%
   rename(
     demsat = stfdem,
-    age = agea,
+    age = agea
 #    year = inwyys,
-    trust_gov = trstplt,
-    trust_parliament = trstprl,
-    trust_police = trstplc,
-    trust_courts = trstlgl
+#    trust_gov = trstplt,
+#    trust_parliament = trstprl,
+#    trust_police = trstplc,
+#    trust_courts = trstlgl
   ) %>%
   mutate(
-    income = 5 - hincfel,
+    income = 5 - hincfel,   # vierer Skala.. vllt numerisch Income
     educ = Recode(
       eisced,
       "55 = NA"
@@ -101,7 +146,7 @@ save(ess_dd, file = "data/ess_dd.Rdata")
 load("data/ess_dd.Rdata")
 
 
-#binoculaR::binoculaR(ess_dd)
+binoculaR::binoculaR(ess_dd)
 #dput(unique(ess_dd$cntry))
 
 ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece", 
@@ -109,7 +154,10 @@ ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece",
 "Ukraine", "Austria", "Belgium", "Switzerland", "Czech Republic", 
 "Germany", "Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
 "Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
-"Russian Federation", "Sweden", "Slovenia")
+"Russian Federation", "Sweden", "Slovenia") 
+
+# ess_cntrys %>% 
+#   sort %>% dput
 
 # table(ess_dd$inwyys, ess_dd$cntry)
 # table(ess_dd$inwyye, ess_dd$cntry)
@@ -129,51 +177,75 @@ load("data/vdems_start.Rdata")
 
 vdems_sub <- vdems_start %>% 
 #  filter(year %in% 2008:2016) %>% 
-  filter(year %in% 2009:2014) %>% 
+  filter(year %in% 2000:2010) %>% 
   mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
   mutate(cntryear = paste(cntry, year, sep = "_")) %>%
   filter(cntry %in% ess_cntrys)
 
 vdem <- vdems_sub %>% 
   group_by(cntry) %>%
-  tally %>%
+  tally() %>%
   mutate(cntry = unique(cntry)) %>%
   #DD Variable
   mutate(direct_dem = vdems_sub %>%
            dcast(country_name ~ year, 
                  value.var=c("v2xdd_dd")) %>%
-           select(`2009`:`2014`) %>%
+           select(`2000`:`2010`) %>%
            rowMeans) %>%
   mutate(pop10 = vdems_sub %>% 
            dcast(country_name ~ year, 
                  value.var=c("e_mipopula")) %>%
-           select(`2009`:`2014`) %>%
+           select(`2000`:`2010`) %>%
            rowMeans) %>%
   mutate(corruption10 = vdems_sub %>% 
            dcast(country_name ~ year, 
                  value.var=c("v2x_corr")) %>%
-           select(`2009`:`2014`) %>%
+           select(`2000`:`2010`) %>%
            rowMeans) 
+
+
 
 ```
 
-# Model
+## Combining it all
 
 ```{r}
 combined <- vdem %>% 
   left_join(ess_dd, by = "cntry") %>% 
-  mutate_at(vars(demsat, age, income, work, educ, work, polintr), as.numeric) %>% 
-  mutate(polintr = 5 - polintr) %>% 
-  filter(!(cntry %in% c("Switzerland", "Slovenia")))
+#  left_join(idea, by = "cntry") %>% 
+  mutate_at(vars(demsat, age, income, work, educ, work, polintr, stfeco), as.numeric) %>% 
+  mutate(polintr = 5 - polintr) #%>% 
+  #filter(!(cntry %in% c("Switzerland", "Slovenia")))
+
+```
 
 
 
-fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + polintr + polintr*direct_dem + (1|cntry), data = combined)
+# Model
+
+```{r}
+
+
+fit0 <- lme4::lmer(demsat ~ 1 + (1|cntry), data = combined)
+sjstats::icc(fit0)
+
+fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + stfeco + polintr + direct_dem + direct_dem*polintr + (1|cntry), data = combined)
 texreg::screenreg(fit1)
 sjPlot::plot_model(fit1, show.data = T, type = "pred",  terms = "direct_dem")
 
-sjPlot::plot_model(fit1, type = "int")
-sjPlot::sjp.int(fit1, p.kr = F, swap.pred = F)
+ sjPlot::plot_model(fit1, type = "int")
+ sjPlot::sjp.int(fit1, p.kr = F, swap.pred = T)
+```
+
+# Idea
+
+```{r}
+fit1 <- lme4::lmer(demsat ~ age + income + work + educ + work + stfeco + polintr + dd_regional + dd_regional*polintr + (1|cntry), data = combined)
+texreg::screenreg(fit1)
+sjPlot::plot_model(fit1, show.data = T, type = "pred",  terms = "direct_dem")
+
+ sjPlot::plot_model(fit1, type = "int")
+ sjPlot::sjp.int(fit1, p.kr = F, swap.pred = T)
 ```
 
 
