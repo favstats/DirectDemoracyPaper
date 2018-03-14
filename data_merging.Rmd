@@ -6,206 +6,112 @@ output: html_notebook
 ## Loading in Data and Packages
 
 ```{r}
-pacman::p_load(tidyverse, magrittr, countrycode, reshape2, car)
+pacman::p_load(tidyverse, magrittr, countrycode, reshape2, car, xlsx)
 ```
 
-
-```{r, echo=F, warning=F, message=F}
-
-
-ess_1_7 <- haven::read_spss("C:/Users/Fabio/OneDrive/data/ess5_7.sav")
-
-#ess7 <- haven::read_spss("data/ESS7e02_1.sav")
-
-ess8 <- haven::read_spss("data/ESS8e01.sav")
-
-ess_dd <- plyr::rbind.fill(ess_1_7, ess8)
-
-ess_dd %<>% 
-  mutate(cntry = countrycode::countrycode(cntry, "iso2c", "country.name")) %>% 
-  # mutate(cntryname = case_when(
-  #    is.na(cntryname) ~ "Russia",
-  #    TRUE ~ cntryname
-  #  )) %>% 
-  mutate(cntryround = paste(cntry, essround, sep = "_")) #%>% 
-
-#save(ess_dd, file = "data/ess_dd.Rdata")
-
-dput(unique(ess_dd$cntryround))
-table(ess$cntryname)
-table(ess$cntry)
+```{r}
+idea <- readxl::read_xls("data/idea.xls")
 ```
+
 
 # Idea
 
 ```{r}
-idea <- readxl::read_xls("data/idea.xls")
 
-idea
 
-table(idea$`General > Legal provisions for mandatory referendums at national level`)
-table(idea$`General > Legal provisions for optional referendums at national level`)
-table(idea$`General > Legal provisions for citizens' initiatives at national level`)
-table(idea$`General > Legal provisions for agenda initiatives at national level`)
-table(idea$general_legal_provisions_for_direct_democracy_at_the_regional_level)
-table(idea$`General > Legal provisions for direct democracy at the local level`)
-table(idea$`General > Legal basis for direct democracy at the national level`)
+
 
 idea %<>% 
-  janitor::clean_names() %>% 
-  mutate(dd_dummy = case_when(
-    general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" ~ 1L,
-    general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" ~ 1L, 
-    general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
-    general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
-    TRUE ~ 0L
-  ))
+  select(-Country)
 
-idea %<>% 
-  mutate(dd_dummy = case_when(
-    general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" &
-    general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" &
-    general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
-    general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
-    TRUE ~ 0L
-  ))
+type <- stringr::str_extract(names(idea %>% janitor::clean_names()), 
+                                  pattern = "^(.*?)_") %>% 
+             stringr::str_replace_all("_", "")
 
-idea %<>% 
-  mutate(dd_regional = ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level %in% c("No data", "Not applicable"), NA, ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level == "No", 0, 1)))
+labs <- names(idea)
+  
+variable <- idea %>% 
+  janitor::clean_names() %>%
+  names()
 
-table(idea$dd_regional)
+prep_data_idea <- data.frame(variable, labs, type) 
 
-idea %<>% 
-  mutate(cntry = countrycode::countrycode(country, "country.name", "country.name"))
-
+writexl::write_xlsx(prep_data_idea, "data/prep_data_idea.xlsx")
 ```
 
 
-# Merging the ESS and Recode
+
+
+
+
+# Vdem
+
 
 ```{r}
-
-cntry_keeps <- c("Bulgaria_6", "Cyprus_6", "Denmark_7", "Estonia_7", "Spain_7", "Greece_5", "Croatia_5", "Hungary_7", "Italy_6", "Lithuania_7", "Portugal_7", "Slovakia_6", "Ukraine_6", "Austria_8", "Belgium_8", "Switzerland_8", "Czech Republic_8", "Germany_8", "Estonia_8", "Finland_8", "France_8", "United Kingdom of Great Britain and Northern Ireland_8", "Ireland_8", "Israel_8", "Iceland_8", "Netherlands_8", "Norway_8", "Poland_8", "Russian Federation_8", "Sweden_8", "Slovenia_8")
-
-
-ess_dd <- ess_dd %>% 
-  filter(cntryround %in% cntry_keeps) %>%
-  rename(
-    demsat = stfdem,
-    age = agea
-#    year = inwyys,
-#    trust_gov = trstplt,
-#    trust_parliament = trstprl,
-#    trust_police = trstplc,
-#    trust_courts = trstlgl
-  ) %>%
-  mutate(
-    income = 5 - hincfel,   # vierer Skala.. vllt numerisch Income
-    educ = Recode(
-      eisced,
-      "55 = NA"
-    ),
-    work = ifelse(mnactic == 1, 1, 0),
-    sex = gndr - 1 # sex variable erstellen
-  )
-
-table(ess_dd$polintr)
-
-save(ess_dd, file = "data/ess_dd.Rdata")
-
-# hist(ess_dd$demsat)
-
-# fit <- ess_dd %>% 
-#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl) %>% 
-#   psych::fa(nfactors = 2, rotate = "oblimin") 
-#   
-# ess_dd <- predict(fit, ess_dd %>% 
-#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl)) %>% 
-#   as.data.frame() %>% 
-#   rename(external = MR2,
-#          internal = MR1) %>% 
-#   cbind(ess_dd)
-
-# table(ess_dd$etapapl, ess_dd$cntry)
-
-# 12	psppsgv	Political system allows people to have a say in what government does
-# 13	actrolg	Able to take active role in political group
-# 14	psppipl	Political system allows people to have influence on politics
-# 15	cptppol	Confident in own ability to participate in politics
-# 16	ptcpplt	Politicians care what people think
-# 17	etapapl	Easy to take part in politics
-
-```
-
-# Merging Vdem
-
-## Data
-
-```{r}
-
-load("data/ess_dd.Rdata")
-
-
-binoculaR::binoculaR(ess_dd)
-#dput(unique(ess_dd$cntry))
-
-ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece", 
-"Croatia", "Hungary", "Italy", "Lithuania", "Portugal", "Slovakia", 
-"Ukraine", "Austria", "Belgium", "Switzerland", "Czech Republic", 
-"Germany", "Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
-"Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
-"Russian Federation", "Sweden", "Slovenia") 
-
-# ess_cntrys %>% 
-#   sort %>% dput
-
-# table(ess_dd$inwyys, ess_dd$cntry)
-# table(ess_dd$inwyye, ess_dd$cntry)
-# table(ess_dd$proddate, ess_dd$cntry)
-# table(ess_dd$cntry)
-
-# ff <- ess_dd %>% 
-#   mutate(ys = inwyys %>% as.numeric - 6) %>% 
-#   mutate(ye = inwyys %>% as.numeric - 1) %>% 
-#   mutate(needed_years = paste0(ys,":",ye))
-# 
-# table(ff$ys)
-# table(ff$inwyys)
-# table(ff$needed_years)
 
 load("data/vdems_start.Rdata")
 
-vdems_sub <- vdems_start %>% 
-#  filter(year %in% 2008:2016) %>% 
-  filter(year %in% 2000:2010) %>% 
-  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
-  mutate(cntryear = paste(cntry, year, sep = "_")) %>%
-  filter(cntry %in% ess_cntrys)
+vdems_start %>% 
+  select(v2ddlevci) %>% 
+  mutate()
 
-vdem <- vdems_sub %>% 
-  group_by(cntry) %>%
-  tally() %>%
-  mutate(cntry = unique(cntry)) %>%
-  #DD Variable
-  mutate(direct_dem = vdems_sub %>%
-           dcast(country_name ~ year, 
-                 value.var=c("v2xdd_dd")) %>%
-           select(`2000`:`2010`) %>%
-           rowMeans) %>%
-  mutate(pop10 = vdems_sub %>% 
-           dcast(country_name ~ year, 
-                 value.var=c("e_mipopula")) %>%
-           select(`2000`:`2010`) %>%
-           rowMeans) %>%
-  mutate(corruption10 = vdems_sub %>% 
-           dcast(country_name ~ year, 
-                 value.var=c("v2x_corr")) %>%
-           select(`2000`:`2010`) %>%
-           rowMeans) 
+# labelled::var_label(vdems_start$v2ddlexor)
+
+labs <- vdems_start[,stringr::str_detect(names(vdems_start), "v2dd")] %>% 
+  labelled::var_label() %>% unlist() %>% as.vector()
+
+variable <- vdems_start[,stringr::str_detect(names(vdems_start), "v2dd")] %>% 
+  labelled::var_label() %>% unlist() %>% names()
+
+type <- variable %>% stringr::str_sub(start= -2) %>% as.character()
+
+prep_dat <- data.frame(variable, labs, type, stringsAsFactors = F) %>% 
+  mutate(type = case_when(
+    type == "al" ~ "all",
+    type == "ll" ~ "all",
+    type == "ci" ~ "initiative",
+    type == "or" ~ "obligatory",
+    type == "rf" ~ "referendum",
+    type == "pl" ~ "plebsicite"
+  )) %>% 
+  arrange(type)
+
+writexl::write_xlsx(prep_dat, "data/prep_dat.xlsx")
+```
 
 
+
+# C2D
+
+```{r}
+# read.xlsx("data/c2d.xlsx", sheetName = "Seitz")
+
+c2d <- read_csv("data/c2d.csv")
+
+
+labels <- dput(unique(c2d$Institutions))
+
+type <- labels %>%
+  data.frame(labels = .) %>% 
+  mutate(labels = labels %>% as.character %>% tolower()) %>% 
+  mutate(type = case_when(
+    stringr::str_detect(labels, "plebiscite") ~ "plebiscite",
+    stringr::str_detect(labels, "mandatory") ~ "mandatory",    
+    stringr::str_detect(labels, "initiative") ~ "initiative",   
+    stringr::str_detect(labels, "referendum") ~ "referendum"  
+  )) %>% 
+  select(type) %>% 
+  as.vector()
+
+prep_dat_c2d <- data.frame(labels, type) %>% 
+  arrange(type)
+
+writexl::write_xlsx(prep_dat_c2d, "data/prep_dat_c2d.xlsx")
 
 ```
+
+
+
 
 ## Combining it all
 
@@ -329,6 +235,73 @@ p <- ggplot(data=eurMapDataDf) +
 
 # Crap
 
+
+```{r, echo=F, warning=F, message=F}
+
+
+ess_1_7 <- haven::read_spss("C:/Users/Fabio/OneDrive/data/ess5_7.sav")
+
+#ess7 <- haven::read_spss("data/ESS7e02_1.sav")
+
+ess8 <- haven::read_spss("data/ESS8e01.sav")
+
+ess_dd <- plyr::rbind.fill(ess_1_7, ess8)
+
+ess_dd %<>% 
+  mutate(cntry = countrycode::countrycode(cntry, "iso2c", "country.name")) %>% 
+  # mutate(cntryname = case_when(
+  #    is.na(cntryname) ~ "Russia",
+  #    TRUE ~ cntryname
+  #  )) %>% 
+  mutate(cntryround = paste(cntry, essround, sep = "_")) #%>% 
+
+#save(ess_dd, file = "data/ess_dd.Rdata")
+
+dput(unique(ess_dd$cntryround))
+table(ess$cntryname)
+table(ess$cntry)
+```
+
+```{r}
+idea
+
+table(idea$`General > Legal provisions for mandatory referendums at national level`)
+table(idea$`General > Legal provisions for optional referendums at national level`)
+table(idea$`General > Legal provisions for citizens' initiatives at national level`)
+table(idea$`General > Legal provisions for agenda initiatives at national level`)
+table(idea$general_legal_provisions_for_direct_democracy_at_the_regional_level)
+table(idea$`General > Legal provisions for direct democracy at the local level`)
+table(idea$`General > Legal basis for direct democracy at the national level`)
+
+idea %<>% 
+  janitor::clean_names() #%>% 
+  # mutate(dd_dummy = case_when(
+  #   general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" ~ 1L,
+  #   general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" ~ 1L, 
+  #   general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
+  #   general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
+  #   TRUE ~ 0L
+  # ))
+
+idea %<>% 
+  mutate(dd_dummy = case_when(
+    general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" &
+    general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" &
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L, 
+    general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
+    TRUE ~ 0L
+  ))
+
+idea %<>% 
+  mutate(dd_regional = ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level %in% c("No data", "Not applicable"), NA, ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level == "No", 0, 1)))
+
+table(idea$dd_regional)
+
+idea %<>% 
+  mutate(cntry = countrycode::countrycode(country, "country.name", "country.name"))
+```
+
+
 ```{r}
 
 load("data/ess_dd.Rdata")
@@ -417,3 +390,145 @@ combined <- cses4 %>%
   left_join(vdem, by = "cntry") 
 ```
 
+
+
+# Merging the ESS and Recode
+
+```{r}
+
+cntry_keeps <- c("Bulgaria_6", "Cyprus_6", "Denmark_7", "Estonia_7", "Spain_7", "Greece_5", "Croatia_5", "Hungary_7", "Italy_6", "Lithuania_7", "Portugal_7", "Slovakia_6", "Ukraine_6", "Austria_8", "Belgium_8", "Switzerland_8", "Czech Republic_8", "Germany_8", "Estonia_8", "Finland_8", "France_8", "United Kingdom of Great Britain and Northern Ireland_8", "Ireland_8", "Israel_8", "Iceland_8", "Netherlands_8", "Norway_8", "Poland_8", "Russian Federation_8", "Sweden_8", "Slovenia_8")
+
+
+ess_dd <- ess_dd %>% 
+  filter(cntryround %in% cntry_keeps) %>%
+  rename(
+    demsat = stfdem,
+    age = agea
+#    year = inwyys,
+#    trust_gov = trstplt,
+#    trust_parliament = trstprl,
+#    trust_police = trstplc,
+#    trust_courts = trstlgl
+  ) %>%
+  mutate(
+    income = 5 - hincfel,   # vierer Skala.. vllt numerisch Income
+    educ = Recode(
+      eisced,
+      "55 = NA"
+    ),
+    work = ifelse(mnactic == 1, 1, 0),
+    sex = gndr - 1 # sex variable erstellen
+  )
+
+table(ess_dd$polintr)
+
+save(ess_dd, file = "data/ess_dd.Rdata")
+
+# hist(ess_dd$demsat)
+
+# fit <- ess_dd %>% 
+#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl) %>% 
+#   psych::fa(nfactors = 2, rotate = "oblimin") 
+#   
+# ess_dd <- predict(fit, ess_dd %>% 
+#   select(psppsgv, actrolg, psppipl, cptppol, ptcpplt, etapapl)) %>% 
+#   as.data.frame() %>% 
+#   rename(external = MR2,
+#          internal = MR1) %>% 
+#   cbind(ess_dd)
+
+# table(ess_dd$etapapl, ess_dd$cntry)
+
+# 12	psppsgv	Political system allows people to have a say in what government does
+# 13	actrolg	Able to take active role in political group
+# 14	psppipl	Political system allows people to have influence on politics
+# 15	cptppol	Confident in own ability to participate in politics
+# 16	ptcpplt	Politicians care what people think
+# 17	etapapl	Easy to take part in politics
+
+```
+
+
+## vdem
+
+```{r}
+
+load("data/ess_dd.Rdata")
+
+
+# binoculaR::binoculaR(ess_dd)
+#dput(unique(ess_dd$cntry))
+
+ess_cntrys <- c("Bulgaria", "Cyprus", "Denmark", "Estonia", "Spain", "Greece", 
+"Croatia", "Hungary", "Italy", "Lithuania", "Portugal", "Slovakia", 
+"Ukraine", "Austria", "Belgium", "Switzerland", "Czech Republic", 
+"Germany", "Finland", "France", "United Kingdom of Great Britain and Northern Ireland", 
+"Ireland", "Israel", "Iceland", "Netherlands", "Norway", "Poland", 
+"Russian Federation", "Sweden", "Slovenia") 
+
+# ess_cntrys %>% 
+#   sort %>% dput
+
+# table(ess_dd$inwyys, ess_dd$cntry)
+# table(ess_dd$inwyye, ess_dd$cntry)
+# table(ess_dd$proddate, ess_dd$cntry)
+# table(ess_dd$cntry)
+
+# ff <- ess_dd %>% 
+#   mutate(ys = inwyys %>% as.numeric - 6) %>% 
+#   mutate(ye = inwyys %>% as.numeric - 1) %>% 
+#   mutate(needed_years = paste0(ys,":",ye))
+# 
+# table(ff$ys)
+# table(ff$inwyys)
+# table(ff$needed_years)
+
+# vdems_sub <- vdems_start %>% 
+# #  filter(year %in% 2008:2016) %>% 
+#   filter(year %in% 2000:2010) %>% 
+#   mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+#   mutate(cntryear = paste(cntry, year, sep = "_")) %>%
+#   filter(cntry %in% ess_cntrys)
+# 
+# vdem <- vdems_sub %>% 
+#   group_by(cntry) %>%
+#   tally() %>%
+#   mutate(cntry = unique(cntry)) %>%
+#   #DD Variable
+#   mutate(direct_dem = vdems_sub %>%
+#            dcast(country_name ~ year, 
+#                  value.var=c("v2xdd_dd")) %>%
+#            select(`2000`:`2010`) %>%
+#            rowMeans) %>%
+#   mutate(pop10 = vdems_sub %>% 
+#            dcast(country_name ~ year, 
+#                  value.var=c("e_mipopula")) %>%
+#            select(`2000`:`2010`) %>%
+#            rowMeans) %>%
+#   mutate(corruption10 = vdems_sub %>% 
+#            dcast(country_name ~ year, 
+#                  value.var=c("v2x_corr")) %>%
+#            select(`2000`:`2010`) %>%
+#            rowMeans) 
+
+```
+
+## more crap
+
+```{r}
+c2d %>% 
+  filter(year > 1990) %>% 
+  #  filter(Country == "Switzerland") %>% 
+  mutate(Institutions = as.factor(ifelse(is.na(Institutions), "Other", Institutions))) %>% 
+  group_by(Country, Institutions) %>% 
+  tally() %>% 
+  arrange(n, Institutions) %>% 
+  ggplot(aes(Institutions, fill = Institutions)) +
+  geom_bar() +
+  coord_flip() +
+  guides(fill = F) #+
+  #facet_wrap(~Country, scales = "free", ncol = 2)
+
+ggsave(filename = "images/rulesinuse_cntry.png",
+       height = 12, width = 40)
+```

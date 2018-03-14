@@ -14,21 +14,57 @@ header-includes:
 
 \pagenumbering{gobble}
 
-\vspace{1cm}
+**Research question**
 
-This paper aims to track "Alt Right" discourse on Facebook and extract psychometric and linguistic features of their online commentary. More specifically, we identify content that aligns with Alt Right narratives in the Facebook comment sections of relevant media outlets.
+Has direct democracy an effect on satisfaction with the way democracy works?
 
-As a first step, we gathered 1.3 Million Facebook comments from several Alt Right figureheads (e.g. Milo Yiannopolis, Paul Joseph Watson and others). After text cleaning procedures, we applied sentiment analysis to identify hateful comments, leaving us with a dataset of polarized commentaries. Moreover, we used topic modeling to pinpoint Alt Right related themes (for example "anti-feminism" and "anti-white racism") resulting in a text corpus in which the relevant Alt Right narratives were successfully isolated. 
+**Theory**
+
+Easton, Fuchs, etc. -> political support
+
+**Hypotheses**
+
+H1: Direct democracy has a positive effect on individual satisfaction with democracy.
+
+H2: The H1-effect is moderated by...
+
+1. political apathy (Operationalization -> voters (compared to non-voters), problem: occasional voters can not be separated)
+2. socio-economic status/income
+3. political interest (problem: might be influenced by DD & ambiguously related to SWD -> "assertive citizens"") 
+4. party identification
  
-In a last step, we collected 1.1 million Facebook comments on several media outlets (CNN, The New York Times, The Washington Post, ABC, Breitbart and Fox News) in order to compare them to our cleaned Alt Right corpus. We estimated the cosine similarity between the document term matrices to unravel the prevalence of Alt Right discourse on media outlets. We find that Alt Right narratives are mostly found on Fox News and Breitbart, but they can also be tracked on mainstream media outlets such as CNN and The Washington Post. Our results provide a first methodological attempt at classifying Alt Right content and its spread into mainstream media channels, which could be applied across different domains in the future.
+**Data & Operationalization**
 
-This is a bullet point
+ESS - without Israel/Russia?, most recent data (2010 - 2016)
 
-1. Item 1
-2. Item 2
-3. Item 3
-    + Item 3a
-    + Item 3b
+Method: MLA
+
+1. Direct Dmeocracy 
+  + IDEA
+    Number of DD provisions (not usage) on national and local level 
+  + V-DEM
+    Participatory component index
+    
+  + c2d
+    Number of initiatives/referendums in the past on national level
+    Regional level posiible, but data incomplete & not systematically gathered & no controls
+    
+    
+2. Controls
+  + Level 1
+    - Education, Age, Gender
+    - Satisfaction with th economy
+    - Household income 
+    - Unemployment
+    - Possibly Post-materialism 
+  + Level 2
+    (Not all possible, maybe seperate regressions)
+    - GDP, bzw. GDP-Growth
+    - Inflation
+    - ENOP
+    - Age of democracy
+    - Unemployment rate
+    - Dummy: former communist country
+    - Dummy: east-west europe
  
  
-\vspace{.5cm}

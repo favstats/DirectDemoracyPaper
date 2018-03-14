@@ -12,7 +12,6 @@ bibliography: references.bib
 cls: systats.cls
 csl: university-of-stuttgart-sowi-standards.csl
 link-citations: yes
-fontsize: 14pt
 ---
 
 
