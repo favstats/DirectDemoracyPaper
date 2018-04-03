@@ -1,0 +1,90 @@
+---
+geometry: "left=2.5cm,right=4cm,top=2.5cm,bottom=2cm"
+output: 
+  bookdown::pdf_book:
+    toc: false
+    includes:
+     in_header: header.tex
+     before_body: title_page.tex
+     after_body: appendix.tex
+documentclass: article
+bibliography: references.bib
+#cls: systats.cls
+csl: university-of-stuttgart-sowi-standards.csl
+link-citations: yes
+---
+
+```{r globalchunks, include=FALSE}
+# Default Options - kann bei Gebrauch geändert werden
+knitr::opts_chunk$set(
+  echo = T # Whether to display code along with its results
+  , eval = T # Whether to evaluate the code and include its results
+  , results = "asis" # this at deafult is in end much more efficient
+  , cache = F # Whether to cache results for future renders (efficient!)
+  , warning = F # Whether to display errors
+  , message = F # Whether to display messages
+  , error = F # maybe turn on
+  , tidy = F # Whether to reformat code in a tidy way when displaying it
+  , fig.width = 6 # plot width at 6
+  , fig.height = 4 # plot height at 4
+  , fig.align = "left" # plot alignment center
+)
+
+options(xtable.comment = FALSE, scipen = 9999)
+```
+
+
+<!-- \onehalfspacing -->
+\setstretch{1.5}
+
+\section{Introduction} 
+
+
+```{r child = '1_intro.Rmd'}
+```
+
+\section{Challenges in Measuring Direct Democracy} \label{challenges}
+
+```{r child = '2_challenges.Rmd'}
+```
+
+\section{Direct Democracy Data Sources} \label{data}
+
+```{r child = '3_data.Rmd'}
+```
+
+\clearpage
+
+\section{Direct Democracy Measurement Approaches} \label{measurement}
+
+
+```{r child = '4_measurements.Rmd'}
+```
+
+\clearpage
+
+\section{Data Wrangling \& Empirical Comparison} \label{empiric}
+
+```{r child = '5_empirical.Rmd'}
+```
+
+\clearpage
+
+\section{Conclusion and Future Research} \label{conclusion}
+
+```{r child = '6_conclusion.Rmd'}
+```
+
+
+\setstretch{1}
+
+\clearpage
+\newpage
+
+
+# References
+
+\setlength{\parindent}{-0.2in}
+\setlength{\leftskip}{0.2in}
+\setlength{\parskip}{8pt}
+\noindent

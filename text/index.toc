@@ -1,0 +1,33 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}
+\contentsline {section}{\numberline {2}Challenges in Measuring Direct Democracy}{5}{section.2}
+\contentsline {section}{\numberline {3}Direct Democracy Data Sources}{8}{section.3}
+\contentsline {subsection}{\numberline {3.1}Varieties of Democracy - Direct Democracy variables}{9}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Direct Democracy Database (IDEA)}{10}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Database and Search Engine for Direct Democracy (sudd)}{11}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}The Navigator of Direct Democracy}{11}{subsection.3.4}
+\contentsline {section}{\numberline {4}Direct Democracy Measurement Approaches}{13}{section.4}
+\contentsline {subsection}{\numberline {4.1}Approaches assessing Rules in Form}{13}{subsection.4.1}
+\contentsline {subsubsection}{\numberline {4.1.1}Gherghina 2016}{13}{subsubsection.4.1.1}
+\contentsline {subsubsection}{\numberline {4.1.2}Peters 2016}{14}{subsubsection.4.1.2}
+\contentsline {subsubsection}{\numberline {4.1.3}Democracy Barometer}{17}{subsubsection.4.1.3}
+\contentsline {subsection}{\numberline {4.2}Approaches assessing Rules in Use}{18}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Approaches assessing Rules in Form and Rules in Use}{19}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Summary of Measurement Approaches}{21}{subsection.4.4}
+\contentsline {section}{\numberline {5}Data Wrangling \& Empirical Comparison}{23}{section.5}
+\contentsline {subsection}{\numberline {5.1}Data Wrangling}{23}{subsection.5.1}
+\contentsline {subsubsection}{\numberline {5.1.1}Construction of Rules in Form Measures}{23}{subsubsection.5.1.1}
+\contentsline {paragraph}{\numberline {5.1.1.1}Gherghina - RiF}{24}{paragraph.5.1.1.1}
+\contentsline {paragraph}{\numberline {5.1.1.2}Peters - RiF}{24}{paragraph.5.1.1.2}
+\contentsline {paragraph}{\numberline {5.1.1.3}V-Dem RiF}{25}{paragraph.5.1.1.3}
+\contentsline {paragraph}{\numberline {5.1.1.4}Democracy Barometer and Direct Democracy Navigator Indicators}{26}{paragraph.5.1.1.4}
+\contentsline {subsubsection}{\numberline {5.1.2}Construction of Rules in Use Measures}{26}{subsubsection.5.1.2}
+\contentsline {paragraph}{\numberline {5.1.2.1}Gherghina - RiU}{27}{paragraph.5.1.2.1}
+\contentsline {paragraph}{\numberline {5.1.2.2}Summed, Categorized and other Rules in Use Measures}{28}{paragraph.5.1.2.2}
+\contentsline {subsubsection}{\numberline {5.1.3}Mixed Measures and Additional Variables}{30}{subsubsection.5.1.3}
+\contentsline {subsection}{\numberline {5.2}Comparing Rules in Form Measures}{31}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Comparing Rules in Use Measures}{34}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Comparing Mixed Measures}{38}{subsection.5.4}
+\contentsline {section}{\numberline {6}Conclusion and Future Research}{42}{section.6}
+\contentsline {section}{\numberline {7}References}{44}{section.7}
+\contentsline {section}{\numberline {8}Appendix}{46}{section.8}

@@ -1,0 +1,130 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+
+\bibitem[{Afrobarometer(2011-2015)}]{afro}
+\textbf{Afrobarometer}, \textbf{2011-2015}: Merged Data, Rounds 5 and 6.
+\newblock \urlprefix\url{http://www.afrobarometer.org/data/merged-data}.
+
+\bibitem[{Altman(2017)}]{altman2017}
+\textbf{Altman, David}, \textbf{2017}: The Potential of Direct Democracy: A
+  Global Measure (1900--2014).
+\newblock \emph{Social Indicators Research} 133(3), pp. 1207--1227.
+
+\bibitem[{AmericasBarometer(2010/2012/2014)}]{americas}
+\textbf{AmericasBarometer}, \textbf{2010/2012/2014}: Data sets from the years
+  2010, 2012 and 2014.
+\newblock \urlprefix\url{https://www.vanderbilt.edu/lapop/raw-data.php}.
+
+\bibitem[{{Asian Barometer}(2010-2012/2014-2015)}]{asian}
+\textbf{{Asian Barometer}}, \textbf{2010-2012/2014-2015}: Waves 3 and 4.
+\newblock \urlprefix\url{http://www.asianbarometer.org/data}.
+
+\bibitem[{Bauer and Fatke(2014)}]{bauerfatke2014}
+\textbf{Bauer, Paul~C and Fatke, Matthias}, \textbf{2014}: Direct democracy and
+  political trust: Enhancing trust, initiating distrust--or both?
+\newblock \emph{Swiss Political Science Review} 20(1), pp. 49--69.
+
+\bibitem[{Bernard and B{\"u}hlmann(2014)}]{bernhardbuehlmann2014}
+\textbf{Bernard, Laurent and B{\"u}hlmann, Marc}, \textbf{2014}: Beeinflusst
+  die direkte Demokratie das Wirksamkeitsgef{\"u}hl von B{\"u}rgerInnen?
+\newblock Nomos.
+
+\bibitem[{Blume et~al.()Blume, M{\"u}ller, and Voigt}]{blume2007}
+\textbf{Blume, Lorenz, M{\"u}ller, Jend, and Voigt, Stefan}, \textbf{????}:
+  Direct democracy and political trust: Enhancing trust, initiating
+  distrust--or both?
+\newblock \emph{CESifo Working Paper No. 2149} .
+
+\bibitem[{Clark et~al.(2017)Clark, Golder, and Golder}]{clark2018}
+\textbf{Clark, William~Roberts, Golder, Matt, and Golder, Sona~Nadenichek},
+  \textbf{2017}: \emph{Principles of comparative politics}.
+\newblock CQ Press, 3 edition.
+
+\bibitem[{Coppedge et~al.(2017{\natexlab{a}})Coppedge, Gerring, Lindberg,
+  Skaaning, Teorell, Altman, Bernhard, Fish, Glynn, Hicken, Knutsen, Krusell,
+  Lührmann, Marquardt, McMann, Mechkova, Olin, Paxton, Pemstein, Pernes,
+  Petrarca, von Römer, Saxer, Sein, Sigman, Staton, Stepanova, and
+  Wilson}]{coppedge2017vdata}
+\textbf{Coppedge, Michael, Gerring, John, Lindberg, Staffan~I., Skaaning,
+  Svend-Erik, Teorell, Jan, Altman, David, Bernhard, Michael, Fish, M~Steven,
+  Glynn, Adam, Hicken, Allen, Knutsen, Carl~Henrik, Krusell, Joshua, Lührmann,
+  Anna, Marquardt, Kyle~L., McMann, Kelly, Mechkova, Valeriya, Olin, Moa,
+  Paxton, Pamela, Pemstein, Daniel, Pernes, Josefine, Petrarca,
+  Constanza~Sanhueza, von Römer, Johannes, Saxer, Laura, Sein, Brigitte,
+  Sigman, Rachel, Staton, Jeffrey, Stepanova, Natalia, and Wilson, Steven},
+  \textbf{2017}{\natexlab{a}}: V-Dem Country-Year Data, Version 7.1.
+\newblock \emph{Varieties of Democracy (V-Dem) Project}
+  \urlprefix\url{https://www.v-dem.net/en/data/data-version-7-1/}.
+
+\bibitem[{Coppedge et~al.(2017{\natexlab{b}})Coppedge, Gerring, Lindberg,
+  Skaaning, Teorell, Altman, Bernhard, Fish, Glynn, Hicken, Knutsen, Marquardt,
+  McMann, Mechkova, Paxton, Pemstein, Saxer, Seim, Sigman, and
+  Staton}]{coppedge2017v}
+\textbf{Coppedge, Michael, Gerring, John, Lindberg, Staffan~I., Skaaning,
+  Svend-Erik, Teorell, Jan, Altman, David, Bernhard, Michael, Fish, M.~Steven,
+  Glynn, Adam, Hicken, Allen, Knutsen, Carl~Henrik, Marquardt, Kyle~L., McMann,
+  Kelly, Mechkova, Valeriya, Paxton, Pamela, Pemstein, Daniel, Saxer, Laura,
+  Seim, Brigitte, Sigman, Rachel, and Staton, Jeffrey},
+  \textbf{2017}{\natexlab{b}}: V-Dem Codebook V7.
+\newblock \emph{Varieties of Democracy (V-Dem) Project} .
+
+\bibitem[{{European Social Survey}(2012)}]{european}
+\textbf{{European Social Survey}}, \textbf{2012}: Round 6.
+\newblock
+  \urlprefix\url{http://www.europeansocialsurvey.org/data/round-index.html}.
+
+\bibitem[{Fiorino et~al.(2017)Fiorino, Ricciuti, and Venturino}]{fiorino2017}
+\textbf{Fiorino, Nadia, Ricciuti, Roberto, and Venturino, Fulvio},
+  \textbf{2017}: Measuring direct democracy.
+\newblock In: \emph{State, Institutions and Democracy}, pp. 143--158. Springer.
+
+\bibitem[{Gherghina(2016)}]{gherghina2016}
+\textbf{Gherghina, Sergiu}, \textbf{2016}: Direct democracy and subjective
+  regime legitimacy in Europe.
+\newblock \emph{Democratization} 24(4), pp. 613--631.
+
+\bibitem[{IDEA(2017)}]{demnavtypology}
+\textbf{IDEA}, \textbf{2017}: sudddata.
+\newblock \emph{Institute for Democracy and and Electoral Assistanc}
+  \urlprefix\url{https://www.idea.int/data-tools/data/direct-democracy}.
+
+\bibitem[{Latinobarómetro(2013/2015)}]{latino}
+\textbf{Latinobarómetro}, \textbf{2013/2015}: Data sets from the years
+  2013/2015.
+\newblock \urlprefix\url{http://www.latinobarometro.org/latContents.jsp}.
+
+\bibitem[{Merkel and Ritzi(2017)}]{merkelritzi2017}
+\textbf{Merkel, Wolfgang and Ritzi, Claudia}, \textbf{2017}: Fazit.
+\newblock In: \emph{Die Legitimit{\"a}t direkter Demokratie}, pp. 227--250.
+  Springer.
+
+\bibitem[{Peters(2016)}]{peters2016}
+\textbf{Peters, Yvette}, \textbf{2016}: (Re-) join the party! The effects of
+  direct democracy on party membership in Europe.
+\newblock \emph{European Journal of Political Research} 55(1), pp. 138--159.
+
+\bibitem[{Stadelmann-Steffen and Vatter(2012)}]{stadelmannvatter2012}
+\textbf{Stadelmann-Steffen, Isabelle and Vatter, Adrian}, \textbf{2012}: Does
+  satisfaction with democracy really increase happiness? Direct democracy and
+  individual satisfaction in Switzerland.
+\newblock \emph{Political Behavior} 34(3), pp. 535--559.
+
+\bibitem[{Teorell et~al.(2017)Teorell, Holmberg, Rothstein, Khomenko, and
+  Svensson}]{teorell2017qog}
+\textbf{Teorell, Dahlberg~Stefan, Jan, Holmberg, Sören, Rothstein, Bo,
+  Khomenko, Anna, and Svensson, Richard}, \textbf{2017}: The Quality of
+  Government Standard Dataset, version Jan17
+  \urlprefix\url{http://www.qog.pol.gu.se}.
+
+\bibitem[{{World Value Survey}(2010-2014)}]{world}
+\textbf{{World Value Survey}}, \textbf{2010-2014}: Round 6.
+\newblock
+  \urlprefix\url{http://www.worldvaluessurvey.org/WVSDocumentationWV6.jsp}.
+
+\end{thebibliography}

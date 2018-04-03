@@ -1,0 +1,325 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+  \title{}
+  \pretitle{\vspace{\droptitle}}
+  \posttitle{}
+  \author{}
+  \preauthor{}\postauthor{}
+  \date{}
+  \predate{}\postdate{}
+
+
+\begin{document}
+
+\begin{table}[!h]
+    \centering
+    \caption{Overview of the Selected Datasets}
+    \label{datasets}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{@{}llllcc@{}}
+            \toprule
+            \textbf{Dataset} & \textbf{Level} & \textbf{Types} & \textbf{Available Information} & \textbf{Subnationality} & \textbf{Scope} \\ \midrule
+            \textit{IDEA} & \begin{tabular}[c]{@{}l@{}}Country-\\ Level\end{tabular} & \begin{tabular}[c]{@{}l@{}}Mandatory and\\ Optional referendum,\\ Citizens’ Initiative,\\ Agenda Initiative, \\ Recall\end{tabular} & \begin{tabular}[c]{@{}l@{}}Primarily Rules in Form\\ \\ Top-down/bottom-up \\ not separated\\ \\ Information on different quora/ \\ thresholds and bindingness\\ \\ Data preparation necessary\end{tabular} & \begin{tabular}[c]{@{}l@{}}yes, but limited \\ information\end{tabular} & \begin{tabular}[c]{@{}l@{}}198 Countries,\\ up-to-date\end{tabular} \\ \midrule
+            \textit{V-Dem} & \begin{tabular}[c]{@{}l@{}}Country-\\ Year\end{tabular} & \begin{tabular}[c]{@{}l@{}}Obligatory Referendum,\\ Plebiscite,\\ (Facultative) Referendum,\\ Citizens' Initiative\end{tabular} & \begin{tabular}[c]{@{}l@{}}Rules in Form and Use\\ \\ Top-down/bottom-up \\ can be differentiated\\ \\ Information on different quora/\\ thresholds, and bindingness\\ \\ Data can be used \\ for quantitative research \\ without much preparation\end{tabular} & \begin{tabular}[c]{@{}l@{}}yes, but limited \\ information\end{tabular} & \begin{tabular}[c]{@{}l@{}}178 Countries,\\ 1900 - 2016\end{tabular} \\ \midrule
+            \textit{sudd} & \begin{tabular}[c]{@{}l@{}}Referendum-\\ Level\end{tabular} & \begin{tabular}[c]{@{}l@{}}Inofficial Vote,\\ Plebiscite,\\ Obligatory Referendum, \\ Facultative Referendum,\\ Initiative\end{tabular} & \begin{tabular}[c]{@{}l@{}}Primarily Rules in Use\\ \\ Top-down/bottom-up \\ can be differentiated\\ \\ Information on bindingness, \\ quora and thresholds depend \\ on each popular vote\\  \\ Data preparation necessary\end{tabular} & yes & \begin{tabular}[c]{@{}l@{}}140 Countries on \\ national level,\\ 1791 - present\end{tabular} \\ \midrule
+            \textit{\begin{tabular}[c]{@{}l@{}}Direct\\ Democracy\\ Navigator\end{tabular}} & \begin{tabular}[c]{@{}l@{}}Country-\\ Level\end{tabular} & \begin{tabular}[c]{@{}l@{}}Agenda Initiative,\\ Initiative,\\ Referendum,\\ Plebiscite\\ \\ (with subtypes for \\ the latter three)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Top-down/bottom-up \\ can be differentiated\\ \\ Information initiating \\ authority and on the author(s) \\ of the ballot proposal(s)\\ \\ Information on bindingness of \\ plebiscites, quora and\\ thresholds not available\\ \\ Data preparation necessary, \\ incomplete data\end{tabular} & yes & \begin{tabular}[c]{@{}l@{}}112 Countries, \\ with their regions \\ and munincipalities\\ \\ up-to-date, \\ but incomplete\end{tabular} \\ \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+Whenever the effects of direct democracy are meant to be evaluated by
+researchers, they first need to gather (systematic) data that expresses
+the degree of direct democracy. Before the measurement approaches and
+their indicator construction is discussed, we therefore describe data
+sources on direct democratic institutions that allow for cross-national
+comparison. Historically, data on direct democracy was mostly available
+for two regions: Switzerland and the individual states of the United
+States of America. It wasn't until Butler and Ranney's attempt at
+collecting information on referendums from all over the world that
+measuring direct democracy became comparable across a wide variety of
+countries {[}cf. @butler1978referendums{]}. Since then, established
+worldwide democracy indices (for example Polity IV or Freedom House)
+have been fairly neglectant on the topic of direct democracy and do not
+include such variables in their measurements. Other individual
+researchers have been more focused on specific regions, for example
+Latin America {[}cf. @lissidini2011democracia pp. 60-67;
+@zovatto2015instituciones; @madronal2005{]}, Asia {[}cf. @hwang2005{]}
+and Central and Eastern Europe {[}cf. @auer2001direct{]}.
+
+The following section introduces three datasets that include
+institutional provisions and/or usage of direct democracy for countries
+around the world: \emph{Varieties of Democracy} (short: V-Dem), the
+\emph{Direct Democracy Database} by the Institute for Democracy and and
+Electoral Assistance (short: IDEA), and the \emph{Democracy Navigator}
+operated by the Research Center of Citizen Participation/Institute for
+Democracy And Participation Research of the University of Wuppertal. A
+different database that would also have been worthy of including in our
+comparison is compiled by the Research and Documentation Centre on
+Direct Democracy (\emph{c2d}), however at the time of writing this
+paper, the website containing the data has been offline and thus
+inaccessible (as of February and March 2018). We therefore rely on the
+\emph{Database and Search Engine for Direct Democracy} (short: sudd)
+compiled by Beat Müller, which was translated from German into English
+by c2d. The \emph{Democracy Barometer} is not discussed at this point,
+as it only includes superficial data for provision and use of direct
+institutions (compared to the other data sources), namely a total of
+three already aggregated indicators.
+
+Before delving deeper into the separate datasets, it would be wise to
+identify certain common dimensions along which they can be classified.
+For example, the examined datasets differ in in their scope (temporal/
+geographical), in terms of which direct democratic mechanisms they
+provide data for and whether it can be used to account for dimensions
+like top-down/bottom-up, easiness or decisiveness. Also, the datasets
+vary in whether they are composed of cross-sectional or time-series
+country-level data or are based on individual referendums, which is
+especially relevant for the distinction of rules in form and rules in
+use. All of the discussed features imply that the data sources might be
+more or less suitable for researchers, depending on the desired
+operationalization of direct democracy. Table \ref{datasets} gives a
+short overview of the selected datasets.
+
+\subsection{Varieties of Democracy - Direct Democracy
+variables}\label{varieties-of-democracy---direct-democracy-variables}
+
+The most comprehensive and systematic approach might be included in the
+Varieties of Democracy dataset (v7). It includes data in the range from
+1900 to 2016 for a total of 178 countries {[}@coppedge2017v pp.
+137-153{]}. The codebook specifically addresses the top-down and
+bottom-up differentiation in their typology of direct democratic
+institutions, which makes comparison between these dimensions
+convenient. The covered top-down institutions are obligatory referendums
+and plebiscites, initiatives and (facultative) referendums are featured
+as bottom-up mechanisms. The V-Dem data is in a country-year format so
+that it provides the legal provisions for each institution in a given
+year. Concerning rules in use, V-Dem includes a variable for each
+institution, capturing the number of occurrences in a specific year.
+Moreover, a variable is included which indicates if there ways any
+``credible'' use of a direct popular vote institution in a given year
+(by credible it is referred to whether the official results reflect the
+actual vote). The V-Dem data refers almost completely to the national
+level and does not include any subnational forms of direct democracy,
+besides one item that asks whether the respective institution exists at
+national, subnational, or at both levels (except for obligatory
+referendums). Besides information about the existence of institutions,
+it is assessed whether they are binding and whether certain quora apply
+(approval and turnout quorum, administration threshold and supermajority
+requirements for every institution as well as signature requirements and
+gathering periods for the bottom-up institutions).
+
+\subsection{Direct Democracy Database
+(IDEA)}\label{direct-democracy-database-idea}
+
+The direct democracy database by \emph{IDEA} can be seen as collection
+of information rather than a dataset that is meant to be used in
+quantitative analysis. It does not have a specified temporal range,
+instead it simply features the most recent available information. It
+includes several columns assessing provisions of direct democracy in a
+total of 198 countries, but mostly focuses on rules in form (it only
+addresses rules in use by including information on the first referendum
+or initiative held in a specific country and whether a national
+referendum was held since 1980). The IDEA database covers legal
+provisions for five institutions: \emph{mandatory/obligatory
+referendums}, \emph{optional referendums}, \emph{citizens' initiatives},
+\emph{agenda initiatives} and recall. This information is available for
+198 countries also includes regional and local levels, though only
+general information about the existence of such provisions is provided.
+A greater range of information on the respective institutions is only
+available on the national level. For referendums, the information
+consists of restricted/allowed issues, possible initiators, who drafts
+the referendum question, who decides the final form of the ballot text,
+approval quorum, majority requirements and bindingness. A disadvantage
+in the structure of the IDEA data is that its underlying typology of
+institutions does not differentiate between citizen initiated optional
+referendums and top-down optional referendums/plebiscites (though
+extraction is possible and is performed in Chapter \ref{empiric}).
+Moreover optional and mandatory referendums are mixed up in the same
+column, resulting in strings like ``Mandatory referendum - always/
+Optional referendum - sometimes''. This makes it challenging to use the
+data in quantitative analysis, especially if one is interested in data
+for a large number of countries. Regarding initiatives, the same
+mixed-up data structure applies for agenda and citizen' initiatives. For
+both initiatives information is available for issues voted on, required
+materials, disqualification, legality checks, the author of the
+initiatives title and ballot text. For recall institutions, informations
+are provided in similar fashion. Regarding signature collection,
+detailed information is available, for example on time gathering periods
+and requirements, although different institutions are again captured in
+the same variable (this time optional referendums, agenda initiatives,
+citizen initiatives and recall), making it difficult to extract the
+information for quantitative analysis. In general, this coding induces
+uncertainty whether some entries that lack further specification refer
+to all of the provided institutions or not.
+
+\subsection{Database and Search Engine for Direct Democracy
+(sudd)}\label{database-and-search-engine-for-direct-democracy-sudd}
+
+Similarly to the direct democracy database by IDEA, the \emph{Database
+and Search Engine for Direct Democracy} (sudd) is not inherently
+designed to be used in quantitative analyses. However, it includes a
+wide range of data on all kinds of actual direct popular votes from 1791
+to the current day, making it quite valuable for researchers seeking to
+explore direct democratic mechanisms over time. The unit of analysis for
+the sudd data is any direct popular vote that occurred in any given year
+in any given country or region (autonomous/independent/unrecognized or
+colonized regions, does not refer to subnational level, eg. Swiss
+Cantons). This leads to a total of 2815 referendums in 400 countries and
+regions. Given the structure of the data, rules in form are not
+measurable (or only per referendum), making it mostly useful for
+research assessing rules in use. For each popular vote, different
+variables are captured, for example question type, majority
+requirements, number of people entitled to vote and the results of the
+vote. Also majority requirements and sometimes participation or approval
+quora are documented. Rather useful information is captured in the
+column \emph{type of vote}, which categorizes amongst others the type of
+vote (\emph{unofficial}, \emph{plebiscite}, \emph{obligatory
+referendum}, \emph{facultative referendum} and \emph{initiative}), who
+initiated it (for example parliament, president ot the people) and the
+bindingness. Again, if one wishes to use the data for quantitative
+analysis, the information has to be extracted with some effort. The
+coding scheme makes it challenging to use without some extensive data
+cleaning and transforming and, given that the data is not available for
+download, it has to be web scraped from the website itself.\footnote{On
+  request, Beat Müller kindly offered to provide the Data in XML format
+  after restructuring, which would possibly have made data preparation
+  somewhat easier, however such data was not accessible before the end
+  of March 2018. Nevertheless there are some issues which will be
+  addressed in the empirical section, when discussing the construction
+  of rules in use indicators.}
+
+\subsection{The Navigator of Direct
+Democracy}\label{the-navigator-of-direct-democracy}
+
+A noteworthy data compilation is the \emph{Direct Democracy Navigator}
+database, although it is still under development. The aim of the
+Democracy Navigator is to feature available legal designs, practices and
+and events of direct democracy in all jurisdictions around the world. In
+their classification typology, it also accounts for the (veto player or
+minority) status of a top-down initiator as well as the author of the
+ballot proposal(s) {[}cf. @demnavtypology{]}, which results in nine
+different subtypes of direct democratic votes, with three overarching
+main types:
+
+\vspace{0.2cm}
+
+\begin{tabular}{p{13.5cm}}
+    1.) \textit{initiative} (citizens' initiative, citizens' initiative + authorities' counter-proposal, agenda setting initiativ)
+    
+    2.) \textit{referendum} (citizen-initiated referendum, citizen-initiated referendum + counter-proposal, obligatory referendum)
+    
+    3.) \textit{plebiscites} (plebiscite, veto-plebiscite, authorities' minority plebiscite, authorities' minority veto-plebiscite)
+    
+\end{tabular}
+
+Unfortunately, the data available for legal provisions seems to be
+rather incomplete and is not available as a dataset, even on the
+national level (thus it needs to be web scraped). Moreover, it is not
+clear at all whether not-listed legal provisions are actually not
+provided or rather missing values. Furthermore, sometimes types of
+direct democratic votes are counted twice without obvious reasons (for
+example the agenda initiative in Liechtenstein) or because they are
+separately regulated for different issues (for example plebiscites in
+Taiwan). All of this makes it difficult to use for quantitative
+comparative analyses, although the database is useful for cross-checking
+information with other sources.
+
+In general, there is no recommendation as to which of the data sources a
+quantitative researcher should use in their empirical analysis. This
+decision depends heavily on the research question to be answered and the
+underlying concept of direct democracy. For example, many studies
+exclude the recall mechanism from their measurement, because it can be
+seen as a accountability function of representative democracy and not an
+element of direct democracy. If one is interested in examining
+provisions for institutions in regard to whether they are top-down or
+bottom up initiated, a researcher is better advised in using the V-Dem
+data, as it takes much more effort to obtain the information from other
+sources such as IDEA. Generally speaking, of the discussed data sources
+V-Dem is the most convenient and user-friendly dataset to use in
+quantitative analyses, mostly numeric in nature and available in
+time-series format since 1900, with the drawback of some unavailable
+information (for example on agenda initiatives or the authors of ballot
+proposals). On the other hand, the IDEA Database offers more detailed
+documentation of legal provisions and the corresponding constitutional
+paragraphs are often provided as background information, which makes it
+a valuable data source as well. The Democracy Navigator is a rather
+detailed database as well, which is especially useful for cross-checking
+information or to gain additional information if a researcher is
+interested in legal designs in regard to the status of the initiating
+authority or the author of ballot proposals. Lastly, the sudd database
+should be considered by researchers who are specifically interested in
+the occurrence of referendums and other mechanisms in practice (on the
+national level but also for independent and dependent regions).
+
+
+\end{document}

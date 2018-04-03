@@ -1,7 +1,7 @@
 %==========================================================%
 % @author: Simon Roth - www.systats.com 
 %       Universit?t Stuttgart    
-% 	  Institut für Sozialwissenschaften
+% 	  Institut f?r Sozialwissenschaften
 %       creation date: 2017/02/24, version: 0.1  
 %       last update: -        
 %==========================================================%
@@ -41,13 +41,14 @@
 
 
 % FUN package
-\RequirePackage{kantlipsum}
+%\RequirePackage{kantlipsum}
 
 % hypenation?
 \hyphenation{every-where}
 
 %%% drafting package
 \RequirePackage{color}
+\RequirePackage{xcolor}
 
 \newenvironment{drafting}[1]{%
     \leavevmode\color{#1}\ignorespaces%
@@ -55,9 +56,9 @@
 }%
 
 %%% citation
-%\RequirePackage[round]{natbib}
+\RequirePackage[round]{natbib}
 %\bibliographystyle{apalike} % plain
-%  \bibliographystyle{master}
+  \bibliographystyle{master}
 %%% color
 \RequirePackage{color}
 \definecolor{special}{rgb}{0.3, 0.3, 0.3}
@@ -82,5 +83,13 @@
     \setlength\belowdisplayshortskip{3pt}
 }
 
+
+%%% automated table of contents
+\newcommand{\contents}{
+    \newpage
+    \thispagestyle{empty}
+    \vspace{20mm}
+    \tableofcontents
+}
 
 

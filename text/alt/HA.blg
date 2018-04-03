@@ -1,0 +1,53 @@
+This is BibTeX, Version 0.99dThe top-level auxiliary file: HA.aux
+The style file: master.bst
+Database file #1: references.bib
+I was expecting a `,' or a `}'---line 116 of file references.bib
+ :  
+ :  year        = {2014},
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
+Warning--entry type for "afro" isn't style-file defined
+--line 267 of file references.bib
+Warning--entry type for "asian" isn't style-file defined
+--line 275 of file references.bib
+Warning--entry type for "americas" isn't style-file defined
+--line 282 of file references.bib
+Warning--entry type for "european" isn't style-file defined
+--line 308 of file references.bib
+Warning--entry type for "latino" isn't style-file defined
+--line 316 of file references.bib
+Warning--entry type for "world" isn't style-file defined
+--line 325 of file references.bib
+"#" immediately follows a field name---line 615 of file references.bib
+ :  booktitle   = {The Civic Culture Transformed: From Allegiant to Assertive Citizens },+
+ :                                                                                        #
+I'm skipping whatever remains of this entry
+Warning--I didn't find a database entry for "pogrebischi2015"
+Warning--I didn't find a database entry for "coppedge2017data"
+Warning--I didn't find a database entry for "ideahandbook"
+Name 1 in "Coppedge, Michael, and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David and Bernhard, Michael and Fish, M. Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Paxton, Pamela and Pemstein, Daniel and Saxer, Laura and Seim, Brigitte and Sigman, Rachel and Jeffrey Staton" has a comma at the end for entry coppedge2017v
+while executing---line 1440 of file master.bst
+Name 1 in "Coppedge, Michael, and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David and Bernhard, Michael and Fish, M. Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Paxton, Pamela and Pemstein, Daniel and Saxer, Laura and Seim, Brigitte and Sigman, Rachel and Jeffrey Staton" has a comma at the end for entry coppedge2017v
+while executing---line 1440 of file master.bst
+Too many commas in name 1 of "Teorell, Jan, Dahlberg, Stefan and Holmberg, Sören and Rothstein, Bo and Khomenko, Anna and Svensson, Richard" for entry teorell2017qog
+while executing---line 1440 of file master.bst
+Too many commas in name 1 of "Teorell, Jan, Dahlberg, Stefan and Holmberg, Sören and Rothstein, Bo and Khomenko, Anna and Svensson, Richard" for entry teorell2017qog
+while executing---line 1440 of file master.bst
+Name 6 in "Coppedge, Michael and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David, and Bernhard, Michael and Fish, M Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Krusell, Joshua and Lührmann, Anna and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Olin, Moa and Paxton, Pamela and Pemstein, Daniel and Pernes, Josefine and Petrarca, Constanza Sanhueza and von Römer, Johannes and Saxer, Laura and Sein, Brigitte and Sigman, Rachel and Staton, Jeffrey and Stepanova, Natalia and Wilson, Steven" has a comma at the end for entry coppedge2017vdata
+while executing---line 1440 of file master.bst
+Warning--empty booktitle in bernhardbuehlmann2014
+Warning--empty year in blume2007; set to ????
+Name 6 in "Coppedge, Michael and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David, and Bernhard, Michael and Fish, M Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Krusell, Joshua and Lührmann, Anna and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Olin, Moa and Paxton, Pamela and Pemstein, Daniel and Pernes, Josefine and Petrarca, Constanza Sanhueza and von Römer, Johannes and Saxer, Laura and Sein, Brigitte and Sigman, Rachel and Staton, Jeffrey and Stepanova, Natalia and Wilson, Steven" has a comma at the end for entry coppedge2017vdata
+while executing---line 1530 of file master.bst
+Name 6 in "Coppedge, Michael and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David, and Bernhard, Michael and Fish, M Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Krusell, Joshua and Lührmann, Anna and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Olin, Moa and Paxton, Pamela and Pemstein, Daniel and Pernes, Josefine and Petrarca, Constanza Sanhueza and von Römer, Johannes and Saxer, Laura and Sein, Brigitte and Sigman, Rachel and Staton, Jeffrey and Stepanova, Natalia and Wilson, Steven" has a comma at the end for entry coppedge2017vdata
+while executing---line 1530 of file master.bst
+Name 1 in "Coppedge, Michael, and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David and Bernhard, Michael and Fish, M. Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Paxton, Pamela and Pemstein, Daniel and Saxer, Laura and Seim, Brigitte and Sigman, Rachel and Jeffrey Staton" has a comma at the end for entry coppedge2017v
+while executing---line 1530 of file master.bst
+Name 1 in "Coppedge, Michael, and Gerring, John and Lindberg, Staffan I. and Skaaning, Svend-Erik and Teorell, Jan and Altman, David and Bernhard, Michael and Fish, M. Steven and Glynn, Adam and Hicken, Allen and Knutsen, Carl Henrik and Marquardt, Kyle L. and McMann, Kelly and Mechkova, Valeriya and Paxton, Pamela and Pemstein, Daniel and Saxer, Laura and Seim, Brigitte and Sigman, Rachel and Jeffrey Staton" has a comma at the end for entry coppedge2017v
+while executing---line 1530 of file master.bst
+Too many commas in name 1 of "Teorell, Jan, Dahlberg, Stefan and Holmberg, Sören and Rothstein, Bo and Khomenko, Anna and Svensson, Richard" for entry teorell2017qog
+while executing---line 1530 of file master.bst
+Too many commas in name 1 of "Teorell, Jan, Dahlberg, Stefan and Holmberg, Sören and Rothstein, Bo and Khomenko, Anna and Svensson, Richard" for entry teorell2017qog
+while executing---line 1530 of file master.bst
+Warning--empty journal in teorell2017qog
+(There were 13 error messages)

@@ -1,0 +1,14 @@
+\babel@toc {english}{}
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}
+\contentsline {section}{\numberline {2}Challenges in Measuring Direct Democracy}{5}{section.2}
+\contentsline {section}{\numberline {3}Direct Democracy Data Sources}{9}{section.3}
+\contentsline {section}{\numberline {4}Direct Democracy Measurement Approaches}{15}{section.4}
+\contentsline {section}{\numberline {5}Empirical Comparison}{24}{section.5}
+\contentsline {subsection}{\numberline {5.1}Data Wrangling}{24}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}Comparing Rules in Form Measures}{32}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Comparing Rules in Use Measures}{36}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Comparing Mixed Measures}{39}{subsection.5.4}
+\contentsline {section}{\numberline {6}Conclusion and further Research}{42}{section.6}
+\contentsline {section}{\numberline {7}Literature}{45}{section.7}
+\contentsline {section}{\numberline {8}Appendix}{47}{section.8}
+\contentsline {subsection}{\numberline {8.1}Operationalization and Descriptives}{47}{subsection.8.1}

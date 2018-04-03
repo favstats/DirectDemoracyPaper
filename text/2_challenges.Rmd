@@ -1,0 +1,57 @@
+---
+output: pdf_document
+---
+
+Before discussing operationalization and measurement of direct democracy, it is necessary to determine a working definition of direct democracy first. Generally speaking, direct democracy is a form of government in which collective decisions are made by the people themselves and not by their respective delegates, as would be the case in a representative democracy  [cf. @clark2018 pp. 499]. Despite this rather straightforward definition, it is not an easy task to assess direct democracy empirically. One challenge arises from the fact that all democracies rely to some degree on delegation, as the government processes in modern states are too complex to organize them in a completely direct democratic way. Therefore, countries can be more or less direct democratic, depending on their institutional designs. Moreover, there are different institutional arrangements that can be classified as direct democratic mechanisms, tools or institutions, for example mandatory and optional referendums or citizens’ initiatives. Especially challenging in this context is the rather unclear terminology of direct democratic institutions. As Altman puts it, “what we understand as direct democracy has different meanings in different places, and the different institutional components of this concept [...] have diverse normative undertones. For instance, a referendum in one country is called a plebiscite or even a popular initiative in another” [@altman2017 pp. 1208]. For the sake of clarity, we define six direct democratic mechanisms, which can be mapped onto the datasets and measurement approaches that will be discussed later on. The definitions can be found in Table \ref{definition}, and are primarily derived from the V-Dem Codebook [@coppedge2017v pp. 138], and additionally @ideahandbook [pp. 9-14].^[Another notable typology, which allows for a more refined differentiation and is shortly introduced in Chapter \ref{challenges}, is provided by the Democracy Navigator [cf. @demnavtypology].] 
+\clearpage We categorize the direct democratic institutions by two criteria: 
+
+\vspace{0.05cm}
+\begin{tabular}{p{13.5cm}}
+	1.) \textit{who or what} initiated the direct democratic institution 
+	
+	2.) \textit{which topic/issue} they concern 
+	\vspace{0.02cm}
+	(e. g. proposals or rejection of law)
+\end{tabular}
+
+Nevertheless, it is sometimes difficult to follow our defined terminology, as for example when referring to optional referendums, some authors do not specify which actor can initiate them, therefore it is unclear which specific institution the respective source refers to. Such issues will also be addressed in the data wrangling part, as data sources differ in their taxonomy as well.
+
+
+\begin{table}[]
+	\centering
+	\caption{Definition of Direct Democratic Mechanisms}
+	\label{definition}
+%	\resizebox{\textwidth}{!}{%
+%		\small
+		\begin{tabular}{@{}lccc@{}}
+			\toprule
+			\textbf{Mechanism} & \textbf{Concerning} & \textbf{Initiator} & \textbf{Level} \\ \midrule
+			\textit{Recall} & Recall of elected officials & Citizens & Bottom-Up \\ \midrule
+			\textit{\begin{tabular}[c]{@{}l@{}}Agenda \\ Initiatives\end{tabular}} & Proposals to legislative body & Citizens & Bottom-Up \\ \midrule
+			\textit{\begin{tabular}[c]{@{}l@{}}Citizen \\ Initiatives\end{tabular}} & Ballot Proposals & Citizens & Bottom-Up \\ \midrule
+			\textit{\begin{tabular}[c]{@{}l@{}}Facultative \\ Referendum\end{tabular}} & Rejection of law & Citizens & Bottom-Up \\ \midrule
+			\textit{Plebiscite} & Unspecified & Authorities & Top-Down \\ \midrule
+			\textit{\begin{tabular}[c]{@{}c@{}}Obligatory\\ Referendum\end{tabular}} & \begin{tabular}[c]{@{}c@{}}Matters specified \\ in constitution\end{tabular} & Constitution & Top-Down \\ \bottomrule
+			\\[-1em]
+			\multicolumn{4}{r}{%
+	\begin{minipage}{9cm}%
+		\flushright
+		\scriptsize Adapted from: Altman (2017) p. 138;  Beramendi et al. (2008: 9-14) 
+	\end{minipage}%
+}
+		\end{tabular}%
+%	}
+\end{table}
+
+In empirical research, there are different approaches in assessing direct democracy on the national level. The examination of the selected measurement approaches is structured according to criteria which are explicitly or implicitly included. The approaches differ in regard to which democratic mechanisms they assess, whether they capture those mechanisms only in their form or in their use (or both), differentiate between bottom-up and top-down direct democracy, include hurdles/easiness as well as the decisiveness of the mechanisms and whether they account for subnational levels. Not all indices include or consider all the criteria, which can be explained by different data sources as well as conceptions of direct democracy. First, the examined measurements differ in regards to which \textit{mechanisms of direct democracy} they cover. Most of the examined indices are in principle based on whether a certain set of direct democratic institutions exists or not. The variety of institutions referred to mostly consists of the ones defined in Table 1 (*obligatory referendums*, *plebiscites*, *facultative referendums*, *citizen' initiatives*, *agenda initiatives* and *recall*).  
+
+An important differentiation between the institutional availability of direct democratic tools (\textit{rules in form}) and the actual use of these institutions (\textit{rules in use}) is emphasised for example by @bauerfatke2014, @gherghina2016, @blume2007 and @peters2016. The relevance of this distinction lies in the possibly different causes and effects of the formal existence of direct democratic institutions and their actual use. For example, Bauer and Fatke argue that the institutional availability of direct democracy should be positively related to trust in authorities, whereas the actual use of such mechanisms increases distrust [cf. @bauerfatke2014 pp. 53f]. 
+
+Another crucial distinction is the one between \textit{bottom-up} and \textit{top-down} mechanisms of direct democracy [cf. @peters2016; @altman2017]. Here, the core criteria is whether the direct democratic mechanisms are initiated by the citizens (bottom-up) or by constitutional or state organs, for example government or parliament (top-down). The theoretical importance of the difference between top-down and citizen initiated mechanisms is once again rooted in possibly different assumptions about the effects of direct democracy [see for example @peters2016]. Besides the differentiation between citizen-initiated and top-down mechanisms, some measurement approaches take into account whether the initiator is a veto-player and also consider the writer of the ballot proposal [cf. @dembarcodebook pp. 47; see also @demnavtypology].
+
+Another criterion which is captured in some approaches is the *“easiness”* of direct democratic institutions, once they are available. This criterion captures the relevance of thresholds or quora for initiation and/or approval of direct democratic mechanisms. The term is adopted from Altman, who explicitly distinguishes between ease of approval and ease of initiation, but other sources account for the easiness as well [cf. @altman2017; @fiorino2017; @gherghina2016]. 
+
+In addition to or sometimes without consideration of easiness, the *”decisiveness”* of direct democratic mechanisms plays an important role. Decisiveness refers to whether the outcomes of direct democratic mechanisms are binding or merely consultative. This is important for some aggregation methods, as they  apply a weighting that is based on the assumption that actually binding institutions are more direct democratic than merely consultative ones [cf. @kaufmann2004; @fiorino2017; @peters2016]. 
+
+Lastly, two important dimensions that are neglected in most of the measurement approaches discussed in this paper will be briefly mentioned. A rarely considered dimension is *subnational direct democracy* [for example @gherghina2016], although research that also considers variations in direct democracy on subnational levels could be of importance. Moreover, one could argue that a country which provides direct democratic institutions at least at the subnational levels is more direct democratic than a country that does not allow for any direct democratic processes at all, and thus neglecting this dimension might lead to suboptimal results. In this paper, we only focus on the national level for the sake of brevity, although still emphasizing that this is an important dimension that should be studied more intensely. A different dimension rarely covered, but nevertheless important is the scope and content of *issues* for which direct democratic mechanisms are allowed or restricted. 
+After discussing the dimensions which are often captured within measurements of direct democracy, we examine selected data sources that researchers can rely on in order to gather information on provisions as well as actual use of direct democratic instruments.
