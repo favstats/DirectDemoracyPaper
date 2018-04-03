@@ -1,0 +1,1313 @@
+---
+title: "Visualizations"
+output: html_notebook
+---
+
+# load packages
+
+```{r}
+pacman::p_load(tidyverse, magrittr, ggthemes)
+```
+
+## map preprate
+
+```{r}
+library(httr)     # getting data
+library(rgdal)    # working with shapefile
+library(dplyr)    # awesome data manipulation
+library(readr)    # faster reading of CSV data
+library(stringi)  # string manipulation
+library(stringr)  # string manipulation
+library(tidyr)    # reshaping data
+library(grid)     # for 'unit'
+library(scales)   # for 'percent'
+library(ggplot2)  # plotting
+library(ggthemes) # theme_map
+ 
+# this ensures you only download the shapefile once and hides
+# errors and warnings. remove `try` and `invisible` to see messages
+try(invisible(GET("http://www.pewglobal.org/wp-content/lib/js/world-geo.json",
+                  write_disk("world-geo.json"))), silent=TRUE)
+ 
+# use ogrListLayers("world-geo.json") to see file type & 
+# layer info to use in the call to readOGR
+#ogrListLayers("world-geo.json")
+world <- rgdal::readOGR("world-geo.json")
+world_wt <- spTransform(world, CRS("+proj=robin"))
+world_map <- fortify(world_wt)
+
+world_map %>%
+  left_join(data_frame(id=rownames(world@data), name=world@data$name)) %>%
+  select(-id) %>%
+  rename(id=name) -> world_map
+
+world_map %<>% 
+  mutate(id_new = countrycode::countrycode(id, "country.name", "country.name")) %>% 
+  mutate(id = ifelse(is.na(id_new), id, id_new)) %>% 
+  select(-id_new)
+
+save(world_map, file = "data/world_map.Rdata")
+
+```
+
+
+# rules in form
+
+## load data
+
+
+```{r}
+load("data/rif_ghergina.Rdata")
+load("data/rif_peters.Rdata")
+load("data/rif_vdem.Rdata")
+load("data/rif_dembarometer.Rdata")
+load("data/rif_navigator.Rdata")
+
+range01 <- function(x){(x-min(x, na.rm = T))/(max(x, na.rm = T)-min(x, na.rm = T))}
+```
+
+## Plots
+
+```{r}
+
+
+rif_data <- rif_vdem %>% 
+  full_join(rif_ghergina, by = "cntry") %>% 
+  full_join(rif_peters, by = "cntry") %>%   
+  full_join(rif_dembarometer, by = "cntry") %>% 
+  full_join(rif_navigator, by = "cntry") %>%  
+  arrange(cntry) %>% 
+  select(cntry, dd_national, total_index, top_down_index, bottom_up_index, 
+         vdem_total_rif, vdem_topdown_rif, vdem_bottomup_rif, dirdem, national) %>% 
+  mutate_if(is_double, range01) %>% 
+  mutate_if(is_integer, range01)
+
+names(rif_data)
+
+# rif_data %>% 
+#   ggplot(aes(x = dd_national, dirdem)) + geom_smooth(method = "lm") + ggpubr::stat_cor() 
+# rif_data %>% 
+#   ggplot(aes(x = dd_national, vdem_total_rif)) + geom_smooth(method = "lm") + ggpubr::stat_cor()
+# 
+# library(scales)
+# show_col(ggthemes::gdocs_pal()(20))
+```
+
+### Gherghina Plots
+
+```{r}
+get_p_values <- function (pval) {
+dplyr::case_when(is.na(pval) ~ "", pval < 0.001 ~ "p < 0.001", 
+    pval < 0.01 ~ "p < 0.01", pval < 0.05 ~ "p < 0.05", TRUE ~ "")
+}
+
+peters_n <- rif_data %>% select(dd_national, total_index) %>% na.omit() %>% nrow()
+vdem_n <- rif_data %>% select(dd_national, vdem_total_rif) %>% na.omit() %>% nrow()
+dirdem_n <- rif_data %>% select(dd_national, dirdem) %>% na.omit() %>% nrow()
+national_n <- rif_data %>% select(dd_national, national) %>% na.omit() %>% nrow()
+
+peters_corr <- cor.test(rif_data$dd_national, rif_data$total_index)
+peters_corr <- paste0("r = ", round(peters_corr$estimate, 2), ", ", get_p_values(peters_corr$p.value))
+
+vdem_corr <- cor.test(rif_data$dd_national, rif_data$vdem_total_rif)
+vdem_corr <- paste0("r = ", round(vdem_corr$estimate, 2), ", ", get_p_values(vdem_corr$p.value))
+
+dirdem_corr <- cor.test(rif_data$dd_national, rif_data$dirdem)
+dirdem_corr <- paste0("r = ", round(dirdem_corr$estimate, 2), ", ", get_p_values(dirdem_corr$p.value))
+
+national_corr <- cor.test(rif_data$dd_national, rif_data$national)
+national_corr <- paste0("r = ", round(national_corr$estimate, 2), ", ", get_p_values(national_corr$p.value))
+
+
+rif_data %>% 
+  ggplot(aes(x = dd_national)) +
+  #geom_point(aes(y = total_index, color = "Peters")) +
+  geom_smooth(aes(y = total_index, color = "Peters - RiF"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = -0.05, y = 0.95, label = "Peters - RiF", color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.33, y = 0.95, label = peters_corr, color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.55, y = 0.95, label = paste0("N: ", peters_n), color = "#FF9900", hjust = 0) +
+  #geom_point(aes(y = vdem_total_rif, color = "Vdem-Total")) +
+  geom_smooth(aes(y = vdem_total_rif, color = "V-Dem - RiF"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = -0.05, y = 0.90, label = "V-Dem - RiF", color = "#109618", hjust = 0) +
+  annotate("text", x = 0.33, y = 0.90, label = vdem_corr, color = "#109618", hjust = 0) +
+  annotate("text", x = 0.55, y = 0.90, label = paste0("N: ", vdem_n), color = "#109618", hjust = 0) +
+  #geom_point(aes(y = dirdem, color = "Dembarometer")) +
+  geom_smooth(aes(y = dirdem, color = "Dembarometer"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = -0.05, y = 0.85, label = "Direct Democracy Provisions", color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.33, y = 0.85, label = dirdem_corr, color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.55, y = 0.85, label = paste0("N: ", dirdem_n), color = "#3366CC", hjust = 0) +
+  #geom_point(aes(y = national, color = "Democracy Navigator")) +
+  geom_smooth(aes(y = national, color = "DD Navigator"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = -0.05, y = 0.80, label = "Direct Democracy Legal Designs", color = "#DC3912", hjust = 0) +
+  annotate("text", x = 0.33, y = 0.80, label = national_corr, color = "#DC3912", hjust = 0) +
+  annotate("text", x = 0.55, y = 0.80, label = paste0("N: ", national_n), color = "#DC3912", hjust = 0) +
+  ylab("Comparison Measures") + ylim(0, 1) + 
+  xlab("Gherghina - RiF") +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  #ggtitle("Comparing Gherghina - RiF to other Rules in Form Measures") +
+  guides(colour = F)
+
+ggsave(filename = "images/rif_ghergina.png", width = 8, height = 4)
+```
+
+
+### Peters
+
+```{r}
+gherghina_n <- rif_data %>% select(total_index, dd_national) %>% na.omit() %>% nrow()
+vdem_n <- rif_data %>% select(total_index, vdem_total_rif) %>% na.omit() %>% nrow()
+dirdem_n <- rif_data %>% select(total_index, dirdem) %>% na.omit() %>% nrow()
+national_n <- rif_data %>% select(total_index, national) %>% na.omit() %>% nrow()
+
+gherghina_corr <- cor.test(rif_data$total_index, rif_data$dd_national)
+gherghina_corr <- paste0("r = ", round(gherghina_corr$estimate, 2), ", ", get_p_values(gherghina_corr$p.value))
+
+vdem_corr <- cor.test(rif_data$total_index, rif_data$vdem_total_rif)
+vdem_corr <- paste0("r = ", round(vdem_corr$estimate, 2), ", ", get_p_values(vdem_corr$p.value))
+
+dirdem_corr <- cor.test(rif_data$total_index, rif_data$dirdem)
+dirdem_corr <- paste0("r = ", round(dirdem_corr$estimate, 2), ", ", get_p_values(dirdem_corr$p.value))
+
+national_corr <- cor.test(rif_data$total_index, rif_data$national)
+national_corr <- paste0("r = ", round(national_corr$estimate, 2), ", ", get_p_values(national_corr$p.value))
+
+
+rif_data %>% 
+  ggplot(aes(x = total_index)) +
+  #geom_point(aes(y = total_index, color = "Peters")) +
+  geom_smooth(aes(y = dd_national, color = "Peters - RiF"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = 0, y = 0.95, label = "Gherghina - RiF", color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.36, y = 0.95, label = gherghina_corr, color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.58, y = 0.95, label = paste0("N: ", gherghina_n), color = "#FF9900", hjust = 0) +
+  #geom_point(aes(y = vdem_total_rif, color = "Vdem-Total")) +
+  geom_smooth(aes(y = vdem_total_rif, color = "V-Dem - RiF"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = 0, y = 0.90, label = "V-Dem - RiF", color = "#109618", hjust = 0) +
+  annotate("text", x = 0.36, y = 0.90, label = vdem_corr, color = "#109618", hjust = 0) +
+  annotate("text", x = 0.58, y = 0.90, label = paste0("N: ", vdem_n), color = "#109618", hjust = 0) +
+  #geom_point(aes(y = dirdem, color = "Dembarometer")) +
+  geom_smooth(aes(y = dirdem, color = "Dembarometer"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = 0, y = 0.85, label = "Direct Democracy Provisions", color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.36, y = 0.85, label = dirdem_corr, color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.58, y = 0.85, label = paste0("N: ", dirdem_n), color = "#3366CC", hjust = 0) +
+  #geom_point(aes(y = national, color = "Democracy Navigator")) +
+  geom_smooth(aes(y = national, color = "DD Navigator"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = 0, y = 0.80, label = "Direct Democracy Legal Designs", color = "#DC3912", hjust = 0) +
+  annotate("text", x = 0.36, y = 0.80, label = national_corr, color = "#DC3912", hjust = 0) +
+  annotate("text", x = 0.58, y = 0.80, label = paste0("N: ", national_n), color = "#DC3912", hjust = 0) +
+  ylab("Comparison Measures") + ylim(0, 1) + 
+  xlab("Peters - RiF") +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  #ggtitle("Comparing Peters - RiF to other Rules in Form Measures") +
+  guides(colour = F)
+
+ggsave(filename = "images/rif_peters.png", width = 8, height = 4)
+```
+
+
+## Coefficient Plot
+
+```{r}
+load("data/fh_data.Rdata")
+
+mean_na <- function(variables) {
+  mean(variables, na.rm = T)
+}
+
+sd_na <- function(variables) {
+  sd(variables, na.rm = T)
+}
+
+rif_coefs <- rif_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  group_by(fh) %>% 
+  summarise_if(is_double, mean_na)
+#rif_coefs
+
+  
+# rif_coefs %>% 
+#   group_by(key) %>% 
+#   summarize(value = mean(value, na.rm = T))
+
+rif_coefs %<>% 
+  cbind(rif_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  group_by(fh) %>% 
+  summarise_if(is_double, sd_na) %>% 
+  transmute(dd_national_sd = dd_national,
+            total_index_sd = total_index,
+            top_down_index_sd = top_down_index,
+            bottom_up_index_sd = bottom_up_index,
+            vdem_total_rif_sd = vdem_total_rif,
+            vdem_topdown_rif_sd = vdem_topdown_rif,
+            vdem_bottomup_rif_sd = vdem_bottomup_rif,
+            dirdem_sd = dirdem,
+            national_sd = national))
+
+rif_coefs <- rif_coefs %>% 
+  select(fh, dd_national, total_index, vdem_total_rif, dirdem, national, dd_national_sd, 
+         total_index_sd, vdem_total_rif_sd, dirdem_sd, national_sd) %>% 
+  gather(key, value, -fh)
+
+#rif_coefs <- cbind(rif_coefs[1:27,], rif_coefs[28:54,3])
+rif_coefs <- cbind(rif_coefs[1:15,], rif_coefs[16:30,3])  %>% 
+  mutate(key = case_when(
+    key == "dd_national" ~ "Gherghina - RiF",
+    key == "total_index" ~ "Peters - RiF",
+    key == "vdem_total_rif" ~ "Vdem - Count",    
+    key == "dirdem" ~ "Democracy Barometer",
+    key == "national" ~ "Direct Democracy Navigator"
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiF", "Peters - RiF", "Vdem - Count",
+                                    "Democracy Barometer", "Direct Democracy Navigator"))) 
+  
+
+rif_coefs <- rif_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  summarise_if(is_double, mean_na) %>% 
+  select(dd_national, total_index, vdem_total_rif, dirdem, national) %>% 
+  gather() %>% 
+  mutate(key = case_when(
+    key == "dd_national" ~ "Gherghina - RiF",
+    key == "total_index" ~ "Peters - RiF",
+    key == "vdem_total_rif" ~ "Vdem - Count",    
+    key == "dirdem" ~ "Democracy Barometer",
+    key == "national" ~ "Direct Democracy Navigator"
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiF", "Peters - RiF", "Vdem - Count",
+                                    "Democracy Barometer", "Direct Democracy Navigator"))) %>% 
+  mutate(means = value) %>% 
+  select(key, means) %>% 
+  left_join(rif_coefs)
+
+rif_coefs %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  #mutate(sd = `rif_coefs[28:54, 3]`) %>% 
+  mutate(sd = `rif_coefs[16:30, 3]`) %>%   
+  ggplot(aes(fh, value, colour = key)) +
+  geom_point() +
+  geom_pointrange(aes(ymin = value - sd, ymax = value + sd)) +
+  geom_hline(aes(yintercept = means), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  coord_flip() +
+  facet_wrap(~key, scales = "fixed", nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  ggrepel::geom_text_repel(aes(x = fh, 
+                y = value + 0.01,
+                label = sprintf('%.2f', value, 2)), nudge_x = .1) +
+  xlab("Freedom House 2016") +
+  ylab("Mean Value") +
+  guides(colour = F)
+
+ggsave(filename = "images/coef_rif.png", width = 10, height = 3.5)
+
+# library(ggridges)
+# ss <- rif_coefs %>% 
+#   mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+#   select(cntry,fh, dd_national, total_index, vdem_total_rif, dirdem, national)  
+# #select(cntry,fh, vdem_total_rif) %>% 
+# ss %>% 
+#   gather(key, value, -fh, -cntry)  %>% 
+#   drop_na(fh) %>% 
+#   ggplot(aes(fh, value, fill = key)) +
+#   geom_boxplot(width=.5) +
+#   geom_hline(yintercept = mean(ss$value)) +
+#  # geom_pointrange(aes(ymin = value - 1.98*sd, ymax = value + 1.98*sd)) +
+#   coord_flip() +
+#   facet_wrap(~key, scales = "free", ncol = 1) +
+#   ggthemes::theme_hc() +
+#   ggthemes::scale_colour_gdocs()
+# 
+# ggsave(filename = "images/coef_rif.png", height = 10)
+# 
+# rif_coefs %>% 
+#   mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+#    drop_na(fh) %>% 
+#   ggplot(aes(dd_national, fh)) +
+#     geom_density_ridges(scale = 4) 
+
+
+  
+```
+
+### Type Plots
+
+```{r}
+pacman::p_load(ggridges)
+
+rif_type <- rif_data %>% 
+  select(-dd_national, -total_index, -vdem_total_rif, -dirdem, -national) %>% 
+  gather(key, value, -cntry) %>% 
+  mutate(type = ifelse(str_detect(key, "top"),"Top-Down", "Bottom-Up")) %>% 
+  mutate(type = fct_relevel(type, rev(c("Top-Down", "Bottom-Up")))) %>% 
+  mutate(key = case_when(
+    key == "top_down_index" ~ "Peters - RiF",
+    key == "bottom_up_index" ~ "Peters - RiF",
+    key == "vdem_topdown_rif" ~ "V-Dem - RiF",    
+    key == "vdem_bottomup_rif" ~ "V-Dem - RiF"
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Peters - RiF", 
+                                    "V-Dem - RiF"))) %>% 
+  group_by(type, key) %>% 
+  mutate(means = mean(value, na.rm=T)) %>% 
+  ungroup() 
+
+
+rif_type %>% 
+  group_by(type, key) %>% 
+  summarise_all(funs(sum(!is.na(.))))  %>% 
+  ungroup() %>% 
+  mutate(n = value) %>% 
+  select(type, key, n) %>% 
+  left_join(rif_type) %>% 
+  group_by(key) %>%
+  mutate(mean_var = mean(value, na.rm = T)) %>% 
+  ungroup() %>%   
+  ggplot(aes(y = type, x = value, fill = key)) + 
+  geom_density_ridges(scale = 0.8) + 
+  #geom_density_ridges(stat = "binline", bins = 5, scale = 0.95, draw_baseline = FALSE) +
+  geom_vline(aes(xintercept = mean_var), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  geom_text(aes(y = type ,  x = 1.2,  
+                label = paste0("Mean = ", sprintf('%.2f', means, 2))), 
+                color = "black", nudge_y = 0.55, hjust = 1) + 
+  geom_text(aes(y = type ,  x = 1.2,  
+                label = paste0("N = " ,  n)), 
+                color = "black", nudge_y = 0.48, hjust = 1) + 
+  geom_text(aes(y = 0.2 ,  x = 0.75,  
+                label = paste0("Overall Mean = " ,  round(mean_var, 2))), 
+                color = "gray20",  size = 3, nudge_y = 0.55, hjust = 0.5) + 
+  facet_wrap(~key, nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  guides(fill = F) +
+  ylab("") +
+  xlab("")
+
+ggsave(filename = "images/type_rif.png", width = 12, height = 6)
+
+
+```
+
+
+
+### Joyplots FH
+
+```{r}
+
+
+joy_rif <- rif_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  select(cntry, fh, dd_national, total_index, vdem_total_rif, dirdem, national) %>% 
+  gather(key, value, -fh, -cntry) %>% 
+  mutate(key = case_when(
+    key == "dd_national" ~ "Gherghina - RiF",
+    key == "total_index" ~ "Peters - RiF",
+    key == "vdem_total_rif" ~ "V-Dem - RiF",    
+    key == "dirdem" ~ "Direct Democracy Provisions",
+    key == "national" ~ "Direct Democracy Legal Designs"
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiF", "Peters - RiF", "V-Dem - RiF",
+                                    "Direct Democracy Provisions", "Direct Democracy Legal Designs"))) %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  group_by(fh, key) %>% 
+  mutate(means = mean(value, na.rm=T)) %>% 
+  ungroup() 
+
+
+#  filter(value != 0) %>% 
+
+joy_rif %>% 
+  group_by(fh, key) %>% 
+  summarise_all(funs(sum(!is.na(.))))  %>% 
+  ungroup() %>% 
+  mutate(n = value) %>% 
+  select(fh, key, n) %>% 
+  left_join(joy_rif) %>% 
+  group_by(key) %>%
+  mutate(mean_var = mean(value, na.rm = T)) %>% 
+  ungroup() %>%   
+  ggplot(aes(y = fh, x = value, fill = key)) + 
+  geom_density_ridges(scale = 0.8) + 
+  #geom_density_ridges(stat = "binline", bins = 5, scale = 0.95, draw_baseline = FALSE) +
+  geom_vline(aes(xintercept = mean_var), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  geom_text(aes(y = fh ,  x = 1.2,  
+                label = paste0("Mean = ", sprintf('%.2f', means, 2))), 
+                color = "black", nudge_y = 0.70, hjust = 1) + 
+  geom_text(aes(y = fh ,  x = 1.2,  
+                label = paste0("N = " ,  n)), 
+                color = "black", nudge_y = 0.50, hjust = 1) + 
+  geom_text(aes(y = 0.2 ,  x = 0.75,  
+                label = paste0("Overall Mean = " ,  round(mean_var, 2))), 
+                color = "gray20",  size = 3, nudge_y = 0.55, hjust = 0.5) + 
+  facet_wrap(~key, nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  guides(fill = F) +
+  ylab("Freedom House 2016") +
+  xlab("")
+
+ggsave(filename = "images/coef_rif2.png", width = 12, height = 6)
+
+```
+
+#### Map Compare
+
+```{r}
+map_rif_gherghina <- rif_data %>% 
+  select(cntry, top_down_index, bottom_up_index) %>% 
+  mutate(rif = case_when(
+    top_down_index > 0 & bottom_up_index > 0 ~ "Both", 
+    top_down_index > 0 & (bottom_up_index == 0 | is.na(bottom_up_index)) ~ "Only Top-Down", 
+   (top_down_index == 0 | is.na(top_down_index)) & bottom_up_index > 0 ~ "Only Bottom-Up", 
+    top_down_index == 0 & bottom_up_index == 0 ~ "None" 
+  )) %>% 
+  mutate(id = cntry) %>% 
+  drop_na(rif) %>% 
+  mutate(`Rules in Form - Top-Down/Bottom-Up` = rif) %>% 
+  select(id, `Rules in Form - Top-Down/Bottom-Up`) %>% 
+  mutate(label = "Peters - RiF")
+
+
+map_rif_vdem <- rif_data %>% 
+  select(cntry, vdem_topdown_rif, vdem_bottomup_rif) %>% 
+  mutate(rif = case_when(
+    vdem_topdown_rif > 0 & vdem_bottomup_rif > 0 ~ "Both", 
+    vdem_topdown_rif > 0 & (vdem_bottomup_rif == 0 | is.na(vdem_bottomup_rif)) ~ "Only Top-Down", 
+   (vdem_topdown_rif == 0 | is.na(vdem_topdown_rif)) & vdem_bottomup_rif > 0 ~ "Only Bottom-Up", 
+    vdem_topdown_rif == 0 & vdem_bottomup_rif == 0 ~ "None" 
+  )) %>% 
+  mutate(id = cntry) %>% 
+  drop_na(rif) %>% 
+  mutate(`Rules in Form - Top-Down/Bottom-Up` = rif) %>% 
+  select(id, `Rules in Form - Top-Down/Bottom-Up`) %>% 
+  mutate(label = "V-Dem - RiF") 
+
+map_rif <- map_rif_gherghina %>% 
+  full_join(map_rif_vdem) 
+
+map_rif_n <- map_rif %>% 
+  group_by(label, `Rules in Form - Top-Down/Bottom-Up`) %>% 
+  summarize(n = n())
+# table(map_rif_gherghina$`Rules in Form - Top-Down/Bottom-Up`)
+
+world_map %>% 
+  # mutate(regions = countrycode::countrycode(id, "country.name", "continent")) %>% 
+  # filter(regions == "Europe") %>% 
+  ggplot() +
+  geom_map(map = world_map,
+         aes(x = long, y = lat, group = group, map_id = id),
+         color = "#7f7f7f", fill = "gray80", size = 0.15) +
+  geom_map(data = map_rif, 
+           map = world_map,
+        aes(map_id  = id, 
+            fill = `Rules in Form - Top-Down/Bottom-Up`),
+                    color = "black", size = 0.01) + 
+  theme_map() +
+#  scale_fill_gradient(low = "red", high = "blue") + 
+  coord_equal() +
+  ggthemes::scale_fill_gdocs() +
+  facet_wrap(~label, nrow = 2) +
+  geom_text(data = map_rif_n %>% 
+              filter(`Rules in Form - Top-Down/Bottom-Up` == "Both"), 
+            aes(x = -18569645, y = 5569645, group = label,
+                                  label = paste0("N = ", n)), color = "blue") +
+  geom_text(data = map_rif_n %>% 
+              filter(`Rules in Form - Top-Down/Bottom-Up` == "None"), 
+            aes(x = -18569645, y = 4569645, group = label,
+                                  label = paste0("N = ", n)), color = "red") +
+  geom_text(data = map_rif_n %>% 
+              filter(`Rules in Form - Top-Down/Bottom-Up` == "Only Bottom-Up"), 
+            aes(x = -18569645, y = 3569645, group = label,
+                                  label = paste0("N = ", n)), color = "orange") +
+  geom_text(data = map_rif_n %>% 
+              filter(`Rules in Form - Top-Down/Bottom-Up` == "Only Top-Down"), 
+            aes(x = -18569645, y = 2569645, group = label,
+                                  label = paste0("N = ", n)), color = "darkgreen")
+ 
+ggsave(filename = "images/map_rif.png", height = 8, width = 9)
+```
+
+
+# rules in use
+
+## load data
+
+```{r}
+load("data/riu_ghergina.Rdata")
+load("data/riu_vdem_sum.Rdata")
+load("data/riu_sudd_sum.Rdata")
+load("data/riu_vdem_cat.Rdata")
+load("data/riu_sudd_cat.Rdata")
+# load("data/riu_vdem_mean.Rdata")
+# load("data/riu_sudd_mean.Rdata")
+load("data/riu_dembarometer.Rdata")
+```
+
+### Gherghina
+
+```{r}
+
+
+riu_data <- riu_ghergina %>% 
+  full_join(riu_vdem_sum, by = "cntry") %>% 
+  full_join(riu_sudd_sum, by = "cntry") %>%   
+  full_join(riu_vdem_cat, by = "cntry") %>% 
+  full_join(riu_sudd_cat, by = "cntry") %>%  
+  full_join(riu_dembarometer, by = "cntry") %>%  
+  arrange(cntry) %>% 
+  drop_na(cntry) %>% 
+  mutate_if(is_double, range01) %>% 
+  mutate_if(is_integer, range01)
+  
+
+vdem_n <- riu_data %>% select(use_index_sum, occ_all_vdem_sum) %>% na.omit() %>% nrow()
+sudd_n <- riu_data %>% select(use_index_sum, occ_all_sudd_sum) %>% na.omit() %>% nrow()
+vdem_n_cat <- riu_data %>% select(use_index_sum, occ_all_vdem_cat) %>% na.omit() %>% nrow()
+sudd_n_cat <- riu_data %>% select(use_index_sum, occ_all_sudd_cat) %>% na.omit() %>% nrow()
+dembarom_n <- riu_data %>% select(use_index_sum, eff_dd) %>% na.omit() %>% nrow()
+credible_n <- riu_data %>% select(use_index_sum, occ_credible_sum) %>% na.omit() %>% nrow()
+
+vdem_corr <- cor.test(riu_data$use_index_sum, riu_data$occ_all_vdem_sum, method = 'spearman')
+vdem_corr <- paste0("Rho = ", round(vdem_corr$estimate, 2), ", ", get_p_values(vdem_corr$p.value))
+
+sudd_corr <- cor.test(riu_data$use_index_sum, riu_data$occ_all_sudd_sum, method = 'spearman')
+sudd_corr <- paste0("Rho = ", round(sudd_corr$estimate, 2), ", ", get_p_values(sudd_corr$p.value))
+
+cat_vdem_corr <- cor.test(riu_data$use_index_sum, riu_data$occ_all_vdem_cat, method = 'spearman')
+cat_vdem_corr <- paste0("Rho = ", round(cat_vdem_corr$estimate, 2), ", ", get_p_values(cat_vdem_corr$p.value))
+
+cat_sudd_corr <- cor.test(riu_data$use_index_sum, riu_data$occ_all_sudd_cat, method = 'spearman')
+cat_sudd_corr <- paste0("Rho = ", round(cat_sudd_corr$estimate, 2), ", ", get_p_values(cat_sudd_corr$p.value))
+
+dembarom_corr <- cor.test(riu_data$use_index_sum, riu_data$eff_dd, method = 'spearman')
+dembarom_corr <- paste0("Rho = ", round(dembarom_corr$estimate, 2), ", ", get_p_values(dembarom_corr$p.value))
+
+credible_corr <- cor.test(riu_data$use_index_sum, riu_data$occ_credible_sum, method = 'spearman')
+credible_corr <- paste0("Rho = ", round(credible_corr$estimate, 2), ", ", get_p_values(credible_corr$p.value))
+
+require("mgcv")
+
+riu_data %>% 
+  ggplot(aes(x = use_index_sum)) +
+  #geom_point(aes(y = total_index, color = "Peters")) +
+  geom_smooth(aes(y = occ_all_vdem_sum, color = "V-Dem - RiU - Sum"), method = "lm", formula = y ~ x, se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.42, label = "V-Dem - RiU - Sum", color = "#0099C6", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.42, label = vdem_corr, color = "#0099C6", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.42, label = paste0("N: ", vdem_n), color = "#0099C6", hjust = 0) +
+  geom_smooth(aes(y = occ_all_sudd_sum, color = "Sudd - RiU - Sum"), method = "lm", formula = y ~ x, se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.35, label = "Sudd - RiU - Sum", color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.35, label = sudd_corr, color = "#FF9900", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.35, label = paste0("N: ", vdem_n), color = "#FF9900", hjust = 0) +
+  #geom_point(aes(y = vdem_total_rif, color = "Vdem-Total")) +
+  geom_smooth(aes(y = occ_all_vdem_cat, color = "V-Dem - RiU - Cat."), method = "lm", formula = y ~ x, se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.28, label = "V-Dem - RiU - Cat.", color = "#109618", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.28, label = cat_vdem_corr, color = "#109618", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.28, label = paste0("N: ", vdem_n_cat), color = "#109618", hjust = 0) +
+  #geom_point(aes(y = dirdem, color = "Dembarometer")) +
+  geom_smooth(aes(y = occ_all_sudd_cat, color = "Sudd - RiU - Cat."), method = "lm", formula = y ~ x, se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.21, label = "Sudd - RiU - Cat.", color = "#B82E2E", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.21, label = cat_sudd_corr, color = "#B82E2E", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.21, label = paste0("N: ", sudd_n_cat), color = "#B82E2E", hjust = 0) +
+  #geom_point(aes(y = national, color = "Democracy Navigator")) +
+  geom_smooth(aes(y = eff_dd, color = "Effective Use"), method = "lm", formula = y ~ x, se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.14, label = "Effective Use", color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.14, label = dembarom_corr, color = "#3366CC", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.14, label = paste0("N: ", dembarom_n), color = "#3366CC", hjust = 0) +
+  #geom_point(aes(y = national, color = "Democracy Navigator")) +
+  geom_smooth(aes(y = occ_credible_sum, color = "Credible Use"), method = "lm", se = F, alpha = 0.1) +
+  annotate("text", x = 0.50, y = 0.07, label = "Credible Use", color = "#990099", hjust = 0) +
+  annotate("text", x = 0.71, y = 0.07, label = credible_corr, color = "#990099", hjust = 0) +
+  annotate("text", x = 0.95, y = 0.07, label = paste0("N: ", credible_n), color = "#990099", hjust = 0) +
+  ylab("Comparison Measures") + ylim(0, 1) + 
+  xlab("Gherghina - RiU") +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  #ggtitle("Comparing Gherghina - RiU to other Rules in Use Measures") +
+  guides(colour = F)
+
+ggsave(filename = "images/riu_ghergina.png", width = 8, height = 4)
+
+library(scales)
+show_col(ggthemes::gdocs_pal()(20))
+
+# riu_ghergina %>% 
+#   full_join(riu_vdem_sum, by = "cntry") %>% 
+#   full_join(riu_sudd_sum, by = "cntry") %>%   
+#   full_join(riu_vdem_cat, by = "cntry") %>% 
+#   full_join(riu_sudd_cat, by = "cntry") %>%  
+#   full_join(riu_dembarometer, by = "cntry") %>%  
+#   arrange(cntry) %>% 
+#   drop_na(cntry) %>% 
+#   select(occ_state_vdem_sum) %>% 
+#   table()
+# 
+# counts <- riu_ghergina %>% 
+#   full_join(riu_vdem_sum, by = "cntry") %>% 
+#   full_join(riu_sudd_sum, by = "cntry") %>%   
+#   full_join(riu_vdem_cat, by = "cntry") %>% 
+#   full_join(riu_sudd_cat, by = "cntry") %>%  
+#   full_join(riu_dembarometer, by = "cntry") %>%  
+#   arrange(cntry) %>% 
+#   drop_na(cntry) %>% 
+#   select(-cntry) %>% 
+#   colSums(na.rm = T) %>% 
+#   as.data.frame() %>% 
+#   rownames_to_column()
+# 
+# writexl::write_xlsx(counts, path = "data/counts.xlsx")
+```
+
+### Coefficient Plot
+
+```{r}
+riu_coefs <- riu_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  group_by(fh) %>% 
+  summarise_if(is_double, mean_na)
+
+riu_coefs %<>% 
+  cbind(riu_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  group_by(fh) %>% 
+  summarise_if(is_double, sd_na) %>% 
+  transmute(use_index_sum_sd = use_index_sum,
+            occ_all_vdem_sum_sd = occ_all_vdem_sum,
+            occ_all_sudd_sum_sd = occ_all_sudd_sum,
+            occ_all_vdem_cat_sd = occ_all_vdem_cat,
+            occ_all_sudd_cat_sd = occ_all_sudd_cat,
+            eff_dd_sd = eff_dd,
+            occ_credible_sum_sd = occ_credible_sum))
+
+riu_coefs <- riu_coefs %>% 
+  select(fh, use_index_sum, occ_all_vdem_sum, occ_all_sudd_sum, occ_all_vdem_cat, occ_all_sudd_cat, eff_dd, 
+         occ_credible_sum, use_index_sum_sd, occ_all_vdem_sum_sd, occ_all_sudd_sum_sd, occ_all_vdem_cat_sd, occ_all_sudd_cat_sd, eff_dd_sd, occ_credible_sum_sd) %>% 
+  gather(key, value, -fh) 
+
+riu_coefs <- cbind(riu_coefs[1:21,], riu_coefs[22:42,3])  %>% 
+  mutate(key = case_when(
+    key == "use_index_sum" ~ "Gherghina - RiU",
+    key == "occ_all_vdem_sum" ~ "V-Dem Sum",
+    key == "occ_all_sudd_sum" ~ "Sudd Sum",    
+    key == "occ_all_vdem_cat" ~ "V-Dem Cat",
+    key == "occ_all_sudd_cat" ~ "Sudd Cat",
+    key == "eff_dd" ~ "Effective Use",
+    key == "occ_credible_sum" ~ "Credible Use"  
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiU", "V-Dem Sum", "Sudd Sum",
+                                    "V-Dem Cat", "Sudd Cat", "Effective Use", "Credible Use"))) 
+  
+riu_coefs <- riu_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+  summarise_if(is_double, mean_na) %>% 
+  select(use_index_sum, occ_all_vdem_sum, occ_all_sudd_sum, occ_all_vdem_cat, occ_all_sudd_cat, eff_dd, 
+         occ_credible_sum) %>% 
+  gather() %>% 
+  mutate(key = case_when(
+    key == "use_index_sum" ~ "Gherghina - RiU",
+    key == "occ_all_vdem_sum" ~ "V-Dem Sum",
+    key == "occ_all_sudd_sum" ~ "Sudd Sum",    
+    key == "occ_all_vdem_cat" ~ "V-Dem Cat",
+    key == "occ_all_sudd_cat" ~ "Sudd Cat",
+    key == "eff_dd" ~ "Effective Use",
+    key == "occ_credible_sum" ~ "Credible Use"  
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiU", "V-Dem Sum", "Sudd Sum",
+                                    "V-Dem Cat", "Sudd Cat", "Effective Use", "Credible Use"))) %>% 
+  mutate(means = value) %>% 
+  select(key, means) %>% 
+  left_join(riu_coefs)
+
+riu_coefs %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  #mutate(sd = `rif_coefs[28:54, 3]`) %>% 
+  mutate(sd = `riu_coefs[22:42, 3]`) %>%   
+  ggplot(aes(fh, value, colour = key)) +
+  geom_point() +
+  geom_pointrange(aes(ymin = value - sd, ymax = value + sd)) +
+  geom_hline(aes(yintercept = means), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  coord_flip() +
+  facet_wrap(~key, scales = "free", nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  ggrepel::geom_text_repel(aes(x = fh, 
+                y = value + 0.01,
+                label = sprintf('%.2f', value, 2)), nudge_x = .1) +
+  xlab("Freedom House 2016") +
+  ylab("Mean Value") +
+  guides(colour = F)
+
+ggsave(filename = "images/coef_riu.png", width = 12, height = 3.5)
+```
+
+
+### Type Plots
+
+```{r}
+recode_cat <- function(variables) {
+case_when(
+    variables == 0 ~ 0,
+    variables %in% 1:2 ~ 1,    
+    variables %in% 3:4 ~ 2,
+    variables %in% 5:6 ~ 3,  
+    variables %in% 7:8 ~ 4,  
+    variables %in% 9:100000 ~ 5  
+    )
+}
+
+riu_data_cat <- riu_ghergina %>% 
+  full_join(riu_vdem_sum, by = "cntry") %>% 
+  full_join(riu_sudd_sum, by = "cntry") %>%   
+  full_join(riu_vdem_cat, by = "cntry") %>% 
+  full_join(riu_sudd_cat, by = "cntry") %>%  
+  full_join(riu_dembarometer, by = "cntry") %>%  
+  arrange(cntry) %>% 
+  drop_na(cntry) %>% 
+  mutate_if(is_double, recode_cat) %>% 
+  mutate_if(is_integer, recode_cat) %>% 
+  mutate_if(is_double, range01) %>% 
+  mutate_if(is_integer, range01)
+   
+
+pacman::p_load(ggridges)
+
+riu_type <- riu_data_cat %>% 
+  select(cntry, occ_state_vdem_sum, occ_citizen_vdem_sum, occ_citizen_sudd_sum, occ_state_sudd_sum) %>% 
+  gather(key, value, -cntry) %>% 
+  mutate(type = ifelse(str_detect(key, "state"),"Top-Down", "Bottom-Up")) %>% 
+  mutate(type = fct_relevel(type, rev(c("Top-Down", "Bottom-Up")))) %>% 
+  mutate(key = case_when(
+    key == "occ_state_vdem_sum" ~ "V-Dem - RiU - Categorized",
+    key == "occ_citizen_vdem_sum" ~ "V-Dem - RiU - Categorized",
+    key == "occ_citizen_sudd_sum" ~ "Sudd - RiU - Categorized",    
+    key == "occ_state_sudd_sum" ~ "Sudd - RiU - Categorized"
+  )) %>% 
+    mutate(key = fct_relevel(key, c("V-Dem - RiU - Categorized", 
+                                    "Sudd - RiU - Categorized"))) %>% 
+  group_by(type, key) %>% 
+  #mutate(value = log(value+1)) %>% 
+  mutate(means = mean(value, na.rm = T)) %>% 
+  ungroup() 
+
+
+riu_type %>% 
+  group_by(type, key) %>% 
+  summarise_all(funs(sum(!is.na(.))))  %>% 
+  ungroup() %>% 
+  mutate(n = value) %>% 
+  select(type, key, n) %>% 
+  left_join(riu_type) %>% 
+  group_by(key) %>%
+  mutate(mean_var = mean(value, na.rm = T)) %>% 
+  ungroup() %>%   
+  ggplot(aes(y = type, x = value, fill = key)) + 
+  geom_density_ridges(scale = 0.8) + 
+  #geom_density_ridges(stat = "binline", bins = 5, scale = 0.95, draw_baseline = FALSE) +
+  geom_vline(aes(xintercept = mean_var), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  geom_text(aes(y = type ,  x = 1.2,  
+                label = paste0("Mean = ", sprintf('%.2f', means, 2))), 
+                color = "black", nudge_y = 0.55, hjust = 1) + 
+  geom_text(aes(y = type ,  x = 1.2,  
+                label = paste0("N = " ,  n)), 
+                color = "black", nudge_y = 0.47, hjust = 1) + 
+  geom_text(aes(y = 0.2 ,  x = 0.3,  
+                label = paste0("Overall Mean = " ,  round(mean_var, 2))), 
+                color = "gray20",  size = 3, nudge_y = 0.55, hjust = 0.5) + 
+  facet_wrap(~key, nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  guides(fill = F) +
+  ylab("") +
+  xlab("")
+
+ggsave(filename = "images/type_riu.png", width = 12, height = 6)
+
+
+```
+
+
+
+### Joyplots FH
+
+```{r}
+pacman::p_load(ggridges)
+
+joy_riu <- riu_data %>% 
+  full_join(fh_data, by = "cntry") %>% 
+  drop_na(fh) %>% 
+    select(cntry, fh, use_index_sum, occ_all_vdem_sum, occ_all_sudd_sum, occ_all_vdem_cat, occ_all_sudd_cat, eff_dd, occ_credible_sum) %>% 
+  gather(key, value, -fh, -cntry) %>% 
+  mutate(key = case_when(
+    key == "use_index_sum" ~ "Gherghina - RiU",
+    key == "occ_all_vdem_sum" ~ "V-Dem - RiU - Sum",
+    key == "occ_all_sudd_sum" ~ "Sudd - RiU - Sum",    
+    key == "occ_all_vdem_cat" ~ "V-Dem - RiU -  Cat.",
+    key == "occ_all_sudd_cat" ~ "Sudd - RiU - Cat.",
+    key == "eff_dd" ~ "Effective Use",
+    key == "occ_credible_sum" ~ "Credible Use"  
+  )) %>% 
+    mutate(key = fct_relevel(key, c("Gherghina - RiU", "V-Dem - RiU - Sum", "Sudd - RiU - Sum",
+                                    "V-Dem - RiU -  Cat.", "Sudd - RiU - Cat.", "Effective Use", "Credible Use"))) %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  group_by(fh, key) %>% 
+  #mutate(value = log(value+1)) %>% 
+  mutate(means = mean(value, na.rm=T)) %>% 
+  ungroup() 
+
+
+#  filter(value != 0) %>% 
+
+joy_riu %>% 
+  group_by(fh, key) %>% 
+  summarise_all(funs(sum(!is.na(.))))  %>% 
+  ungroup() %>% 
+  mutate(n = value) %>% 
+  select(fh, key, n) %>% 
+  left_join(joy_riu) %>% 
+  group_by(key) %>%
+  mutate(mean_var = mean(value, na.rm = T)) %>% 
+  ungroup() %>%   
+  ggplot(aes(y = fh, x = value, fill = key)) + 
+  geom_density_ridges(scale = 0.8) + 
+  #geom_density_ridges(stat = "binline", bins = 5, scale = 0.95, draw_baseline = FALSE) +
+  geom_vline(aes(xintercept = mean_var), 
+             color = "gray25", 
+             linetype = "dotted") + 
+  geom_text(aes(y = fh ,  x = 1.2,  
+                label = paste0("Mean = ", sprintf('%.2f', means, 2))), 
+                color = "black", nudge_y = 0.70, hjust = 1) + 
+  geom_text(aes(y = fh ,  x = 1.2,  
+                label = paste0("N = " ,  n)), 
+                color = "black", nudge_y = 0.50, hjust = 1) + 
+  geom_text(aes(y = 0.2 ,  x = 0.75,  
+                label = paste0("Overall Mean = " ,  round(mean_var, 2))), 
+                color = "gray20",  size = 3, nudge_y = 0.55, hjust = 0.5) + 
+  facet_wrap(~key, nrow = 1) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  guides(fill = F) +
+  ylab("Freedom House 2016") +
+  xlab("")
+
+ggsave(filename = "images/coef_riu2.png", width = 12, height = 5)
+
+```
+
+
+#### Map Compare
+
+```{r}
+riu_data_map <- riu_ghergina %>% 
+  full_join(riu_vdem_sum, by = "cntry") %>% 
+  full_join(riu_sudd_sum, by = "cntry") %>%   
+  full_join(riu_vdem_cat, by = "cntry") %>% 
+  full_join(riu_sudd_cat, by = "cntry") %>%  
+  full_join(riu_dembarometer, by = "cntry") %>%  
+  arrange(cntry) %>% 
+  drop_na(cntry) 
+
+map_riu_vdem <- riu_data_map %>% 
+  select(cntry, occ_state_vdem_sum, occ_citizen_vdem_sum) %>% 
+  mutate(riu = case_when(
+    occ_state_vdem_sum > 0 & occ_citizen_vdem_sum > 0 ~ "Both", 
+    occ_state_vdem_sum > 0 & occ_citizen_vdem_sum == 0 ~ "Only Top-Down", 
+    occ_state_vdem_sum == 0 & occ_citizen_vdem_sum > 0 ~ "Only Bottom-Up", 
+    occ_state_vdem_sum == 0 & occ_citizen_vdem_sum == 0 ~ "None" 
+  )) %>% 
+  mutate(id = cntry) %>% 
+  drop_na(riu) %>% 
+  mutate(`Rules in Use - Top-Down/Bottom-Up` = riu) %>% 
+  select(id, `Rules in Use - Top-Down/Bottom-Up`) %>% 
+  mutate(label = "V-Dem - RiU")
+
+map_riu_sudd <- riu_data_map %>% 
+  select(cntry, occ_state_sudd_sum, occ_citizen_sudd_sum) %>% 
+  mutate(riu = case_when(
+    occ_state_sudd_sum > 0 & occ_citizen_sudd_sum > 0 ~ "Both", 
+    occ_state_sudd_sum > 0 & (occ_citizen_sudd_sum == 0 | is.na(occ_citizen_sudd_sum)) ~ "Only Top-Down", 
+   (occ_state_sudd_sum == 0 | is.na(occ_state_sudd_sum)) & occ_citizen_sudd_sum > 0 ~ "Only Bottom-Up", 
+    occ_state_sudd_sum == 0 & occ_citizen_sudd_sum == 0 ~ "None" 
+  )) %>% 
+  mutate(id = cntry) %>% 
+  drop_na(riu) %>% 
+  mutate(`Rules in Use - Top-Down/Bottom-Up` = riu) %>% 
+  select(id, `Rules in Use - Top-Down/Bottom-Up`) %>% 
+  mutate(label = "Sudd - RiU")
+
+map_riu <- map_riu_vdem %>% 
+  full_join(map_riu_sudd) 
+
+map_riu_n <- map_riu %>% 
+  group_by(label, `Rules in Use - Top-Down/Bottom-Up`) %>% 
+  summarize(n = n())
+# table(map_rif_gherghina$`Rules in Form - Top-Down/Bottom-Up`)
+
+world_map %>% 
+  # mutate(regions = countrycode::countrycode(id, "country.name", "continent")) %>% 
+  # filter(regions == "Europe") %>% 
+  ggplot() +
+  geom_map(map = world_map,
+         aes(x = long, y = lat, group = group, map_id = id),
+         color = "#7f7f7f", fill = "gray80", size = 0.15) +
+  geom_map(data = map_riu, 
+           map = world_map,
+        aes(map_id  = id, 
+            fill = `Rules in Use - Top-Down/Bottom-Up`),
+                    color = "black", size = 0.01) + 
+  theme_map() +
+#  scale_fill_gradient(low = "red", high = "blue") + 
+  coord_equal() +
+  ggthemes::scale_fill_gdocs() +
+  facet_wrap(~label, nrow = 2) +
+  geom_text(data = map_riu_n %>% 
+              filter(`Rules in Use - Top-Down/Bottom-Up` == "Both"), 
+            aes(x = -18569645, y = 5569645, group = label,
+                                  label = paste0("N = ", n)), color = "blue") +
+  geom_text(data = map_riu_n %>% 
+              filter(`Rules in Use - Top-Down/Bottom-Up` == "None"), 
+            aes(x = -18569645, y = 4569645, group = label,
+                                  label = paste0("N = ", n)), color = "red") +
+  geom_text(data = map_riu_n %>% 
+              filter(`Rules in Use - Top-Down/Bottom-Up` == "Only Bottom-Up"), 
+            aes(x = -18569645, y = 3569645, group = label,
+                                  label = paste0("N = ", n)), color = "orange") +
+  geom_text(data = map_riu_n %>% 
+              filter(`Rules in Use - Top-Down/Bottom-Up` == "Only Top-Down"), 
+            aes(x = -18569645, y = 2569645, group = label,
+                                  label = paste0("N = ", n)), color = "darkgreen")
+ 
+ggsave(filename = "images/map_riu.png", height = 8, width = 9)
+```
+
+
+
+
+# Mixed
+
+Citizen-initiated component of direct popular vote index (D) (v2xdd_cic)
+Top-Down component of direct popular vote index (D) (v2xdd_toc)
+
+```{r}
+load("data/vdem_fiorino.Rdata")
+load("data/fiorino_dat.Rdata")
+load("data/vdem_tdbu.Rdata")
+load("data/world_map.Rdata")
+```
+
+
+## doing it
+
+```{r}
+mixed_data <- vdem_fiorino %>% 
+  full_join(fiorino_dat, by = "cntry") %>% 
+  select(cntry, dd_vdem, ddi) %>% 
+  mutate_if(is_double, range01) 
+  
+mixed_data %>% 
+  ggplot(aes(x = ddi, y = dd_vdem)) +
+  geom_point() + 
+  geom_smooth(method = "loess") +
+  ggpubr::stat_cor() +
+  ggrepel::geom_text_repel(data = mixed_data %>% filter(ddi > .4 | dd_vdem > .4), aes(label = cntry)) +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  xlab("Direct Democracy Index (Fiorino et al. 2017)") +
+  ylab("Direct Popular Vote Index (DPVI)")
+
+ggsave(filename = "images/mixed.png", width = 10, height = 6)
+```
+
+
+
+```{r}
+load("data/fh_2005.Rdata")
+
+is_outlier <- function(x) {
+  return(x < quantile(x, 0.25, na.rm = T) - 1.5 * IQR(x, na.rm = T) | x > quantile(x, 0.75, na.rm = T) + 1.5 * IQR(x, na.rm = T))
+}
+
+compare_mixed <- mixed_data %>% 
+  left_join(fh_2005) %>% 
+  gather(key, value, -fh, -cntry) %>% 
+  drop_na(fh) %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  mutate(key = case_when(
+     key == "dd_vdem" ~ "Direct Popular Vote Index (DPVI)",
+     key == "ddi" ~ "Direct Democracy Index (Fiorino et al. 2017)"
+  )) %>% 
+  mutate(key = fct_relevel(key, c("Direct Popular Vote Index (DPVI)",
+                                 "Direct Democracy Index (Fiorino et al. 2017)")))
+
+compare_mixed %>%
+  #mutate(`Direct Democracy Index` = key) %>% 
+  #group_by(fh) %>%
+  #mutate(outlier = ifelse(value > .6, cntry, NA)) %>%
+  ggplot(aes(fh, value, fill = key)) +
+  geom_boxplot() + 
+  coord_flip() +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  xlab("Freedom House 2005") +
+  ylab("") +
+  labs(fill = "Direct Democracy Indices") +
+  #guides(fill = T) +
+  ggrepel::geom_text_repel(data = compare_mixed %>% 
+              filter((key == "Direct Popular Vote Index (DPVI)" & 
+                      fh == "Free" & value > 0.7) |
+                      (key == "Direct Democracy Index (Fiorino et al. 2017)" & 
+                       fh == "Partly Free" & value > 0.7 )), 
+                           aes(label = cntry),
+            nudge_x = -0.3, nudge_y = 0, 
+            segment.colour = "white")
+
+
+ggsave(filename = "images/boxplots.png", width = 10, height = 8)
+
+
+
+vdem_fiorino %>% 
+  left_join(fh_2005) %>% 
+  gather(key, value, -fh, -cntry) %>% 
+  drop_na(fh) %>% 
+  mutate(fh = fct_relevel(fh, c("Not Free", "Partly Free", "Free"))) %>% 
+  mutate(key = case_when(
+     key == "dd_vdem" ~ "Direct Popular Vote Index (DPVI)",
+     key == "ddi" ~ "Direct Democracy Index (Fiorino et al. 2017)"
+  )) %>% 
+  mutate(key = fct_relevel(key, c("Direct Popular Vote Index (DPVI)",
+                                 "Direct Democracy Index (Fiorino et al. 2017)"))) %>% 
+  dplyr::group_by(fh, key) %>% 
+  tally()
+```
+
+
+
+#### Fiorino
+
+```{r}
+map_fiorino <- fiorino_dat %>% 
+  mutate(id = cntry) %>% 
+  mutate(`Direct Democracy Index (Fiorino et al. 2017)` = ddi) %>% 
+  select(id, `Direct Democracy Index (Fiorino et al. 2017)`) 
+  
+
+world_map %>% 
+  # mutate(regions = countrycode::countrycode(id, "country.name", "continent")) %>% 
+  # filter(regions == "Europe") %>% 
+  ggplot() +
+  geom_map(map = world_map,
+         aes(x = long, y = lat, group = group, map_id = id),
+         color = "#7f7f7f", fill = "gray80", size = 0.15) +
+  geom_map(data = map_fiorino, 
+           map = world_map,
+        aes(map_id  = id, 
+            fill = `Direct Democracy Index (Fiorino et al. 2017)`),
+                    color = "black", size = 0.01) + 
+  theme_map() +
+#  scale_fill_gradient(low = "red", high = "blue") + 
+  coord_equal()
+ 
+ggsave(filename = "images/map_Fiorino.png", height = 8, width = 9)
+```
+
+#### altmann
+
+```{r}
+vdem_map <- vdem_fiorino %>% 
+  mutate(id = cntry) %>% 
+  mutate(`Direct Popular Vote Index (DPVI)` = dd_vdem) %>% 
+  select(id, `Direct Popular Vote Index (DPVI)`) 
+  
+
+world_map %>% 
+  # mutate(regions = countrycode::countrycode(id, "country.name", "continent")) %>% 
+  # filter(regions == "Europe") %>% 
+  ggplot() +
+  geom_map(map = world_map,
+         aes(x = long, y=lat, group = group, map_id = id),
+         color = "#7f7f7f", fill = "gray80", size = 0.15) +
+  geom_map(data = vdem_map, 
+           map = world_map,
+        aes(map_id  = id, 
+            fill = `Direct Popular Vote Index (DPVI)`),
+                    color = "black", size = 0.01) + 
+  theme_map() +
+#  scale_fill_gradient(low = "red", high = "blue") + 
+  coord_equal()
+ 
+ggsave(filename = "images/map_altmann.png", height = 8, width = 9)
+```
+
+
+
+## Bottom Up Top Down
+
+```{r}
+
+
+vdem_tdbu %>% 
+  select(cntry, atopdown_altmann, bottomup_altmann) %>% 
+  ggplot(aes(bottomup_altmann, atopdown_altmann)) +
+  geom_point() +
+  ggpubr::stat_cor(label.x.npc = "right") +
+  ggrepel::geom_text_repel(data = vdem_tdbu %>%  
+                             filter(atopdown_altmann > 0.5 | bottomup_altmann > 0.15),
+                           aes(label = cntry)) +
+  geom_smooth(method = "lm") +
+  ggthemes::theme_hc() +
+  ggthemes::scale_colour_gdocs() +
+  #guides(fill = F) +
+  xlab("Direct Popular Vote Index (Bottom-Up)") +
+  ylab("Direct Popular Vote Index (Top-Down)")
+
+
+ggsave(filename = "images/altman_tpbu.png", width = 10, height = 6)
+```
+
+
+
+
+
+
+# mega - dataframes
+
+```{r}
+megadat <- rif_vdem %>% 
+  full_join(rif_ghergina, by = "cntry") %>% 
+  full_join(rif_peters, by = "cntry") %>%   
+  full_join(rif_dembarometer, by = "cntry") %>% 
+  full_join(rif_navigator, by = "cntry") %>%  
+  full_join(riu_ghergina, by = "cntry") %>%    
+  full_join(riu_vdem_sum, by = "cntry") %>% 
+  full_join(riu_sudd_sum, by = "cntry") %>%   
+  full_join(riu_vdem_cat, by = "cntry") %>% 
+  full_join(riu_sudd_cat, by = "cntry") %>%  
+  full_join(riu_dembarometer, by = "cntry") %>%  
+  full_join(vdem_fiorino, by = "cntry") %>%  
+  full_join(fiorino_dat, by = "cntry") %>%  
+  full_join(vdem_tdbu, by = "cntry") %>%  
+  arrange(cntry) %>% 
+  drop_na(cntry) %>% 
+  # select(-cntry, 
+  #        -referendum_who_can_initiate_an_optional_referendum_at_the_national_level, 
+  #        -referendum_are_referendum_results_binding.x, 
+  #        -bindingness_optional, 
+  #        -referendum_are_referendum_results_binding.y,
+  #        -bottom_up_index_old,
+  #        -country_name) %>% 
+         #rules in form
+  select(dd_national, total_index, top_down_index, bottom_up_index, 
+         vdem_total_rif, vdem_topdown_rif, vdem_bottomup_rif, dirdem, national,
+         #rules in use
+         use_index_sum,  occ_all_vdem_sum, occ_state_vdem_sum, occ_citizen_vdem_sum,
+         occ_all_sudd_sum, occ_state_sudd_sum, occ_citizen_sudd_sum,
+         occ_all_vdem_cat, occ_state_vdem_cat, occ_citizen_vdem_cat,
+         occ_all_sudd_cat, occ_state_sudd_cat, occ_citizen_sudd_cat,  
+         eff_dd, occ_credible_sum,
+         #mixed
+         dd_vdem, atopdown_altmann, bottomup_altmann, ddi)
+
+```
+
+
+```{r}
+names(megadat) <- c("Gherghina - RiF", 
+                    "Peters - RiF", "Peters - RiF - Top-Down", "Peters - RiF - Bottom-Up",
+"V-Dem - RiF", "V-Dem - RiF - Top-Down", "V-Dem - RiF - Bottom-Up", 
+"Direct Democracy Provisions", 
+"Direct Democracy Legal Designs", 
+"Gherghina - RiU", 
+"V-Dem - RiU - Sum", "V-Dem - RiU - Sum - Top-Down", 
+"V-Dem - RiU - Sum - Bottom-Up", 
+"Sudd - RiU - Sum", "Sudd - RiU - Sum - Top-Down", 
+"Sudd - RiU - Sum - Bottom-Up", 
+"V-Dem - RiU - Cat.", "V-Dem - RiU - Cat. - Top-Down", 
+"V-Dem - RiU - Cat. - Bottom-Up", 
+"Sudd - RiU - Cat.", "Sudd - RiU - Cat. - Top-Down", 
+"Sudd - RiU - Cat. - Bottom-Up", 
+"Effective Use", "Credible Use", "DPVI", 
+"DPVI - Top-Down", "DPVI - Bottom-Up", "DDI")
+
+# c("dd_national", "total_index", "top_down_index", "bottom_up_index", 
+# "vdem_total_rif", "vdem_topdown_rif", "vdem_bottomup_rif", "dirdem", 
+# "national", "use_index_sum", "occ_all_vdem_sum", "occ_state_vdem_sum", 
+# "occ_citizen_vdem_sum", "occ_all_sudd_sum", "occ_state_sudd_sum", 
+# "occ_citizen_sudd_sum", "occ_all_vdem_cat", "occ_state_vdem_cat", 
+# "occ_citizen_vdem_cat", "occ_all_sudd_cat", "occ_state_sudd_cat", 
+# "occ_citizen_sudd_cat", "eff_dd", "occ_credible_sum", "dd_vdem", 
+# "atopdown_altmann", "bottomup_altmann", "ddi")
+
+
+library(reshape2)
+cormat <- round(cor(megadat, use = "pairwise.complete.obs"),3)
+
+# Get upper triangle of the correlation matrix
+get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <-cormat[hc$order, hc$order]
+}
+
+
+# Reorder the correlation matrix
+#cormat <- reorder_cormat(cormat)
+upper_tri <- get_upper_tri(cormat)
+# Melt the correlation matrix
+melted_cormat <- melt(upper_tri, na.rm = TRUE) %>% 
+  mutate(value = sprintf('%.2f', value, 2)) %>% 
+  mutate(value = as.numeric(value))
+# Create a ggheatmap
+ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+    name="Pearson Correlation\n") +
+ ggthemes::theme_hc()+ # minimal theme
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()  + 
+geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.7, 0.8),
+  legend.title = element_text(size = 20),
+  axis.ticks.length = unit(2, "cm"),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 30, barheight = 1.5,
+                title.position = "top", title.hjust = 0.5))
+# Print the heatmap
+print(ggheatmap) 
+
+ggsave(filename = "images/heatmap.png", height = 15, width = 15)
+
+```
+

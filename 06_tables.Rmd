@@ -1,0 +1,375 @@
+---
+title: "Tables"
+output: html_notebook
+---
+
+
+# load packages
+
+```{r}
+pacman::p_load(tidyverse, psych, xtable, magrittr)
+```
+
+
+# rules in form
+
+## load data
+
+
+```{r}
+load("data/rif_ghergina.Rdata")
+load("data/rif_peters.Rdata")
+load("data/rif_vdem.Rdata")
+load("data/rif_dembarometer.Rdata")
+load("data/rif_navigator.Rdata")
+```
+
+### doing it
+
+```{r}
+rif_table <- rbind(
+psych::describe(rif_ghergina) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname == "dd_national") %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "Most Recent") %>% 
+  mutate(data = "IDEA"), 
+
+  
+
+psych::describe(rif_peters) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("total_index", "top_down_index", "bottom_up_index")) %>% 
+  arrange(desc(rowname)) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "Most Recent") %>% 
+  mutate(data = "IDEA"), 
+
+
+psych::describe(rif_vdem) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("vdem_total_rif", "vdem_topdown_rif", "vdem_bottomup_rif")) %>% 
+  arrange(desc(rowname)) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "2016") %>% 
+  mutate(data = "V-Dem"), 
+
+
+psych::describe(rif_dembarometer) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("dirdem")) %>% 
+  arrange(desc(rowname)) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "2014") %>% 
+  mutate(data = "Democracy Barometer"),
+
+psych::describe(rif_navigator) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("national")) %>% 
+  arrange(desc(rowname)) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "Most Recent") %>% 
+  mutate(data = "Direct Democracy Navigator")
+)  
+
+rif_table %<>% 
+  mutate(n = round(n)) 
+
+names(rif_table) <- c("\\textbf{Rules in Form Measures}", 
+                      "\\textbf{N(=Countries)}", 
+                      "\\textbf{Mean}", "\\textbf{SD}", 
+                      "\\textbf{Median}", "\\textbf{Range}", 
+                      "\\textbf{Time}", "\\textbf{Data}")
+
+rif_table %<>% 
+  mutate(`\\textbf{Time}` = c("Most Recent", 
+                              "''", "''" ,"''",
+                              "2016", "''", "''",
+                              "2014", "Most Recent")) %>% 
+  mutate(`\\textbf{Data}` = c("IDEA", 
+                              "''", "''" ,"''",
+                              "V-Dem", "''", "''",
+                              "Democracy Barometer", 
+                              "Direct Democracy Navigator")) %>% 
+  mutate(`\\textbf{N(=Countries)}` = as.character(round(`\\textbf{N(=Countries)}`, 0)))
+
+rif_table$`\\textbf{Rules in Form Measures}` <- c("Gherghina - RiF", 
+                                                  "Peters - RiF", 
+                                                  "\\hskip .5cm \\textit{Top-Down}", 
+                                                  " \\hskip .5cm \\textit{Bottom-Up}", 
+                                                  "V-Dem - RiF", 
+                                                  "\\hskip .5cm \\textit{Top-Down}",
+                                                  "\\hskip .5cm \\textit{Bottom-Up}", 
+                                                  "Direct Democracy Provisions",
+                                                  "Direct Democracy Legal Designs")
+
+
+
+
+rif_latex <- xtable(rif_table, align = "llccccccc")
+
+print(rif_latex, type = "latex", booktabs = TRUE, 
+      include.rownames = F, sanitize.text.function = function(x){x})
+```
+# rules in use
+
+## load data
+
+```{r}
+load("data/riu_ghergina.Rdata")
+load("data/riu_vdem_sum.Rdata")
+load("data/riu_sudd_sum.Rdata")
+load("data/riu_vdem_cat.Rdata")
+load("data/riu_sudd_cat.Rdata")
+# load("data/riu_vdem_mean.Rdata")
+# load("data/riu_sudd_mean.Rdata")
+load("data/riu_dembarometer.Rdata")
+```
+
+### doing it
+
+```{r}
+riu_table <- rbind(
+psych::describe(riu_ghergina) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname == "use_index_sum") %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "V-Dem"),
+
+psych::describe(riu_vdem_sum) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("occ_all_vdem_sum", 
+                        "occ_state_vdem_sum", 
+                        "occ_citizen_vdem_sum")) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  arrange(desc(mean)) %>% 
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "V-Dem"),
+
+psych::describe(riu_sudd_sum) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  arrange(desc(sd)) %>%  
+  filter(rowname %in% c("occ_all_sudd_sum", 
+                        "occ_state_sudd_sum", 
+                        "occ_citizen_sudd_sum")) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  arrange(desc(n)) %>% 
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "sudd"),
+
+psych::describe(riu_vdem_cat) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("occ_all_vdem_cat", 
+                        "occ_state_vdem_cat", 
+                        "occ_citizen_vdem_cat")) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  arrange(desc(mean)) %>% 
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "V-Dem"),
+
+psych::describe(riu_sudd_cat) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("occ_all_sudd_cat", 
+                        "occ_state_sudd_cat", 
+                        "occ_citizen_sudd_cat")) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  arrange(desc(n)) %>%   
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "sudd"),
+
+# psych::describe(riu_vdem_mean) %>% 
+#   as.data.frame() %>% 
+#   rownames_to_column() %>% 
+#   filter(rowname %in% c("occ_all_vdem", "occ_state_vdem", "occ_citizen_vdem")) %>% 
+#   mutate(range = paste0(min, "-", max)) %>% 
+#   mutate(rif = rowname) %>% 
+#   select(rif, n, mean, sd, median, range) %>% 
+#   mutate(time = "1996-2016") %>% 
+#   mutate(data = "VDEM"),
+# 
+# psych::describe(riu_sudd_mean) %>% 
+#   as.data.frame() %>% 
+#   rownames_to_column() %>% 
+#   filter(rowname %in% c("occ_all_sudd", "occ_state_sudd", "occ_citizen_sudd")) %>% 
+#   mutate(range = paste0(min, "-", max)) %>% 
+#   mutate(rif = rowname) %>% 
+#   select(rif, n, mean, sd, median, range) %>% 
+#   mutate(time = "1996-2016") %>% 
+#   mutate(data = "SUDD"),
+
+psych::describe(riu_dembarometer) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("eff_dd")) %>% 
+  mutate(range = paste0(min, " - ", round(max, 0))) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  arrange(desc(mean)) %>% 
+  mutate(time = "1996-2014") %>% 
+  mutate(data = "Democracy Barometer"),
+
+
+psych::describe(riu_vdem_sum) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("occ_credible_sum")) %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "1996-2016") %>% 
+  mutate(data = "V-Dem")
+)
+
+riu_table %<>% 
+  mutate(n = round(n))
+
+
+names(riu_table) <- c("\\textbf{Rules in Use Measures}", 
+                      "\\textbf{N(=Countries)}", 
+                      "\\textbf{Mean}", "\\textbf{SD}", 
+                      "\\textbf{Median}", "\\textbf{Range}", 
+                      "\\textbf{Time}", "\\textbf{Data}")
+
+riu_table %<>%
+  mutate(`\\textbf{Time}` = c("1996 - 2016", rep("''", 12),
+                              "1996 - 2014", "1996 - 2016")) %>%
+  mutate(`\\textbf{Data}` = c("V-Dem",
+                              "''", "''" ,"''",
+                              "sudd", "''", "''",
+                              "V-Dem", "''", "''",
+                              "sudd", "''", "''",
+                              "Democracy Barometer", "V-Dem")) %>%
+  mutate(`\\textbf{N(=Countries)}` = as.character(round(`\\textbf{N(=Countries)}`, 0)))
+
+
+riu_table$`\\textbf{Rules in Use Measures}` <- c("Gherghina - RiU",
+                                       "V-Dem - RiU - Sum",
+                                       "\\hskip .5cm \\textit{Top-Down}", 
+                                       "\\hskip .5cm \\textit{Bottom-Up}", 
+                                       "Sudd - RiU - Sum",
+                                       "\\hskip .5cm \\textit{Top-Down}", 
+                                       "\\hskip .5cm \\textit{Bottom-Up}", 
+                                       "V-Dem - RiU - Cat.",
+                                       "\\hskip .5cm \\textit{Top-Down}", 
+                                       "\\hskip .5cm \\textit{Bottom-Up}", 
+                                       "Sudd - RiU - Cat.",
+                                       "\\hskip .5cm \\textit{Top-Down}", 
+                                       "\\hskip .5cm \\textit{Bottom-Up}", 
+                                       "Effective Use",
+                                       "Credible Use")
+
+
+
+riu_latex <- xtable(riu_table, align = "llccccccc")
+
+print(riu_latex, type="latex", booktabs = TRUE, 
+      include.rownames = F, sanitize.text.function = function(x){x})
+```
+
+
+# mixed
+
+Citizen-initiated component of direct popular vote index (D) (v2xdd_cic)
+Top-Down component of direct popular vote index (D) (v2xdd_toc)
+
+## load data
+
+```{r}
+load("data/vdem_fiorino.Rdata")
+load("data/fiorino_dat.Rdata")
+load("data/vdem_tdbu.Rdata")
+```
+
+## doing it
+
+
+```{r}
+mixed_table <- rbind(
+psych::describe(vdem_fiorino) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname == "dd_vdem") %>% 
+  mutate(range = paste0(min, " - ", round(max, 0))) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "2000 - 2005") %>% 
+  mutate(data = "V-Dem"),
+
+psych::describe(vdem_tdbu) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("atopdown_altmann", "bottomup_altmann")) %>% 
+  mutate(range = paste0(min, " - ", round(max, 0))) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "2000 - 2005") %>% 
+  mutate(data = "V-Dem"),
+
+psych::describe(fiorino_dat) %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname == "ddi") %>% 
+  mutate(range = paste0(min, " - ", max)) %>% 
+  mutate(rif = rowname) %>% 
+  select(rif, n, mean, sd, median, range) %>% 
+  mutate(time = "2000 - 2005") %>% 
+  mutate(data = "Fiorino et al. 2017")
+)
+
+
+
+mixed_table %<>% 
+  mutate(n = round(n))
+
+names(mixed_table) <- c("\\textbf{Mixed Measures}", 
+                      "\\textbf{N(=Countries)}", 
+                      "\\textbf{Mean}", "\\textbf{SD}", 
+                      "\\textbf{Median}", "\\textbf{Range}", 
+                      "\\textbf{Time}", "\\textbf{Data}")
+
+mixed_table %<>%
+  mutate(`\\textbf{N(=Countries)}` = as.character(round(`\\textbf{N(=Countries)}`, 0))) %>% 
+  mutate(`\\textbf{Data}` = c("V-Dem",  "''",  "''",  "Fiorino et al. 2017"))
+
+mixed_table$`\\textbf{Mixed Measures}` <- c("Direct Popular Vote Index (DPVI)", 
+                                            "\\hskip .5cm \\textit{Top-Down}", 
+                                            "\\hskip .5cm \\textit{Bottom-Up}", 
+                                            "Direct Democracy Index")
+
+mixed_latex <- xtable(mixed_table, align = "llccccccc")
+
+print(mixed_latex, type="latex", booktabs = TRUE, 
+      include.rownames = F, sanitize.text.function = function(x){x})
+```
+

@@ -1,0 +1,1119 @@
+---
+title: "Reproducing"
+output: html_notebook
+---
+
+# Load Packages
+
+```{r}
+pacman::p_load(tidyverse, janitor, sjmisc)
+
+range01 <- function(x){(x-min(x, na.rm = T))/(max(x, na.rm = T)-min(x, na.rm = T))}
+```
+
+# Create RiF
+
+## Idea 
+
+```{r}
+idea <- readxl::read_xls("data/idea.xls") %>% janitor::clean_names()
+
+length(unique(idea$country))
+
+# idea %>% 
+#   select(general_legal_provisions_for_direct_democracy_at_the_local_level) %>% 
+#   table()
+```
+
+### ghergina
+
+```{r}
+
+rif_ghergina <- idea %>% 
+  filter(country %nin% c("Jersey", "Cyprus (North)")) %>% 
+  # national
+  mutate(cntry = countrycode::countrycode(country, "country.name", "country.name")) %>%  
+  mutate(mandatory = case_when(
+  general_legal_provisions_for_mandatory_referendums_at_national_level == "Yes" ~ 1L,
+  general_legal_provisions_for_mandatory_referendums_at_national_level == "No" ~ 0L,
+  TRUE ~ NA_integer_)
+  ) %>% 
+  mutate(optional = case_when(
+  general_legal_provisions_for_optional_referendums_at_national_level == "Yes" ~ 1L,
+  str_detect(general_legal_provisions_for_optional_referendums_at_national_level, "No") ~ 0L,
+  TRUE ~ NA_integer_)
+  ) %>% 
+  mutate(citizen = case_when(
+  general_legal_provisions_for_citizens_initiatives_at_national_level == "Yes" ~ 1L,
+  general_legal_provisions_for_citizens_initiatives_at_national_level == "No" ~ 0L,
+  TRUE ~ NA_integer_)
+  ) %>% 
+  mutate(agenda = case_when(
+  general_legal_provisions_for_agenda_initiatives_at_national_level == "Yes" ~ 1L,
+  general_legal_provisions_for_agenda_initiatives_at_national_level == "No" ~ 0L,  
+  general_legal_provisions_for_agenda_initiatives_at_national_level == "No data" ~ NA_integer_, 
+  TRUE ~ NA_integer_)
+  ) %>% 
+  mutate(recall = case_when(
+  general_legal_provisions_for_recall_at_national_level == "Yes" ~ 1L,
+  general_legal_provisions_for_recall_at_national_level == "No" ~ 0L,  
+  general_legal_provisions_for_recall_at_national_level == "No data" ~ NA_integer_, 
+  TRUE ~ NA_integer_)
+  ) %>% 
+  mutate(dd_national = mandatory + optional + citizen + agenda + recall) %>% 
+  # regional
+  mutate(general_legal_provisions_for_direct_democracy_at_the_regional_level = ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level == "No data", NA, general_legal_provisions_for_direct_democracy_at_the_regional_level)) %>% 
+  mutate(mandatory_regional = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_regional_level, "Mandatory") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_regional_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% #select(mandatory_regional) %>% is.na() %>% table()
+  mutate(optional_regional = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_regional_level, "Optional") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_regional_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(citizen_regional = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_regional_level, "Citizen") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_regional_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(agenda_regional = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_regional_level, "Agenda") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_regional_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(recall_regional = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_regional_level, "Recall") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_regional_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(dd_regional = mandatory_regional + optional_regional + citizen_regional + agenda_regional + recall_regional) %>% 
+  # local
+  mutate(general_legal_provisions_for_direct_democracy_at_the_local_level = ifelse(general_legal_provisions_for_direct_democracy_at_the_local_level == "No data", NA, general_legal_provisions_for_direct_democracy_at_the_local_level)) %>%   
+  mutate(mandatory_local = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_local_level, "Mandatory") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_local_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(optional_local = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_local_level, "Optional") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_local_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(citizen_local = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_local_level, "Citizen") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_local_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(agenda_local = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_local_level, "Agenda") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_local_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(recall_local = case_when(
+  str_detect(general_legal_provisions_for_direct_democracy_at_the_local_level, "Recall") ~ 1L,
+  is.na(general_legal_provisions_for_direct_democracy_at_the_local_level) ~ NA_integer_,
+  TRUE ~ 0L)
+  ) %>% 
+  mutate(dd_local = mandatory_local + optional_local + citizen_local + agenda_local + recall_local) %>% 
+  mutate(dd_regloc = dd_local + dd_regional) %>%   
+  mutate(dd_total = dd_local + dd_regional + dd_national) %>% 
+  select(cntry, dd_local, dd_regional, dd_regloc, dd_national, dd_total,
+         referendum_who_can_initiate_an_optional_referendum_at_the_national_level,
+         referendum_are_referendum_results_binding, mandatory, citizen, agenda, optional)# %>% 
+  # mutate(dd_regional = ifelse(general_legal_provisions_for_direct_democracy_at_the_regional_level == "No data", NA, dd_regional)) %>% 
+  # mutate(dd_local = ifelse(general_legal_provisions_for_direct_democracy_at_the_local_level == "No data", NA, dd_local)) %>%   
+  # mutate(dd_total = case_when(
+  #   is.na(dd_regional) & dd_total == 0 ~ NA_integer_,
+  #   is.na(dd_local) & dd_total == 0 ~ NA_integer_,
+  #   TRUE ~ dd_total
+  #   )) %>% 
+  # select(cntry, mandatory , optional , citizen , agenda , recall, dd_national, 
+  #        mandatory_regional, optional_regional, citizen_regional, agenda_regional, 
+  #        recall_regional, dd_regional,  mandatory_local, optional_local, 
+  #        citizen_local, agenda_local, recall_local, dd_local, dd_regloc, dd_total, bottom_up, top_down) 
+
+# hist(idea_fin$dd_regloc)
+# 
+# idea_fin %>% 
+#   arrange(desc(dd_regloc))
+
+save(rif_ghergina, file = "data/rif_ghergina.Rdata")
+
+```
+
+### Petersen
+
+```{r}
+
+
+rif_peters <- rif_ghergina %>% 
+  mutate(bottom_up = case_when(
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Registered electors") ~ "1",
+    is.na(referendum_who_can_initiate_an_optional_referendum_at_the_national_level) ~ referendum_who_can_initiate_an_optional_referendum_at_the_national_level,
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Not applicable") ~ "0", 
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "legal provisions") ~ "0",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "No data") ~ NA_character_,
+    TRUE ~ "0"
+  )) %>% 
+  mutate(top_down = case_when(
+   # str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Registered electors") ~ "0",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Government") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Senate") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Supreme court") ~ "1", 
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Constitutional") ~ "1",    
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "district councils") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Also factions") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Republic") ~ "1",  
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Parliamentary") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Councils") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Cantons") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "President") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "King") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Legislative") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Prime Minister") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Emir") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Congress") ~ "1",
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "Not applicable") ~ "0", 
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "legal provisions") ~ "0",
+    is.na(referendum_who_can_initiate_an_optional_referendum_at_the_national_level) ~ referendum_who_can_initiate_an_optional_referendum_at_the_national_level,
+    str_detect(referendum_who_can_initiate_an_optional_referendum_at_the_national_level, "No data") ~ NA_character_,
+    TRUE ~ "0")) %>% 
+  mutate(bottom_up = as.numeric(bottom_up)) %>% 
+  mutate(top_down = as.numeric(top_down)) %>% 
+  mutate(bindingness_optional = case_when(
+    str_detect(referendum_are_referendum_results_binding, "Optional referendum - always") ~ "binding",
+    str_detect(referendum_are_referendum_results_binding, "Optional referendum - sometimes") ~ "nonbinding", # sometimes means generally nonbinding
+    str_detect(referendum_are_referendum_results_binding, "Optional referendum - never") ~ "nonbinding", 
+    str_detect(referendum_are_referendum_results_binding, "specified") ~ "nonbinding", # not specified is not binding    
+    str_detect(referendum_are_referendum_results_binding, "No data") ~ NA_character_,
+    str_detect(referendum_are_referendum_results_binding, "Mandatory") ~ NA_character_,
+    TRUE ~ referendum_are_referendum_results_binding
+  )) %>% 
+  mutate(constitutional_referendum = case_when(
+    mandatory == 1 ~ "2",
+    TRUE ~ "0"
+  )) %>% 
+  mutate(legislative_referendum = case_when(
+    optional == 1 & top_down == 1 & bindingness_optional == "binding" ~ "1",
+    optional == 1 & top_down == 1 & bindingness_optional == "nonbinding" ~ "0.5",
+#    optional == 1 & top_down == 1 & bindingness_optional == "sometimes" ~ "0.75",  
+    TRUE ~ "0"
+  )) %>%   
+  mutate(constitutional_referendum = as.numeric(constitutional_referendum)) %>% 
+  mutate(legislative_referendum = as.numeric(legislative_referendum)) %>% 
+  mutate(top_down_index = (constitutional_referendum + legislative_referendum) / 2)  %>% 
+  mutate(bottom_up_index_old = case_when(
+    citizen == 1 ~ "3",
+    agenda == 1 ~ "1.5",
+    citizen == 1 & agenda == 1 ~ "3",
+    TRUE ~ "0"
+  )) %>% 
+  mutate(citizen_peters = ifelse(citizen == 1, 3, citizen)) %>% 
+  mutate(agenda_peters = ifelse(agenda == 1, 1.5, agenda)) %>% 
+  mutate(bottom_up_index = (citizen_peters + agenda_peters) / 3)  %>% 
+  mutate(bottom_up_index = as.numeric(bottom_up_index_old) / 2) %>% 
+  mutate(total_index = (top_down_index + bottom_up_index) / 2) %>% 
+  #drop_na(bindingness_optional) %>% # no bindingess specified
+  select(cntry, bindingness_optional, referendum_are_referendum_results_binding, constitutional_referendum, legislative_referendum, top_down_index, bottom_up_index_old, bottom_up_index, total_index)
+
+save(rif_peters, file = "data/rif_peters.Rdata")
+  
+
+table(rif_peters$bottom_up_index)
+
+rif_peters %>% 
+  filter(total_index > 0.5)
+
+
+```
+
+
+##### READ THROUGH THESE AND DECIDE IF BINDINGNESS SOMETIMES IS 
+
+country
+
+general_legal_provisions_for_mandatory_referendums_at_national_level
+
+Argentina	No	
+Costa Rica	No	
+Mexico	No	
+Mongolia	No	
+New Zealand	No
+
+## democracy barometer data
+
+```{r}
+load("data/demdata.Rdata")
+
+rif_dembarometer <- demdata %>% 
+  filter(year == 2014) %>% 
+  drop_na(dirdem) %>% 
+  mutate(dirdem = (range01(dirdem))*4) %>% 
+  group_by(cntry) %>% 
+  summarise(dirdem = sum(dirdem, na.rm = T)) 
+
+save(rif_dembarometer, file = "data/rif_dembarometer.Rdata")
+```
+
+## Vdem
+
+```{r}
+load("data/vdems_start.Rdata")
+
+rif_vdem <- vdems_start %>% 
+  filter(year == "2016") %>% 
+  filter(country_name != "Palestine/Gaza") %>% 
+  filter(country_name != "Somaliland") %>%   
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(is.na(cntry), country_name, cntry)) %>% 
+  mutate(cntry = ifelse(cntry == "Democratic Republic of Vietnam", "Vietnam", cntry)) %>% 
+  mutate(year = as.character(year)) %>% 
+  mutate(obligatory_bindingness = v2ddlexor) %>% 
+  mutate(initiative_bindingness = v2ddlexci) %>% 
+  mutate(referendum_bindingness = v2ddlexrf) %>% 
+  mutate(plebiscite_bindingness = v2ddlexpl) %>% 
+  mutate(obligatory_rif = as.numeric(obligatory_bindingness > 0)) %>% 
+  mutate(initiative_rif = as.numeric(initiative_bindingness > 0)) %>% 
+  mutate(referendum_rif = as.numeric(referendum_bindingness > 0)) %>% 
+  mutate(plebiscite_rif = as.numeric(plebiscite_bindingness > 0)) %>% 
+  mutate(vdem_total_rif = obligatory_rif + initiative_rif + referendum_rif + plebiscite_rif) %>% 
+  mutate(vdem_bottomup_rif = initiative_rif + referendum_rif) %>% 
+  mutate(vdem_topdown_rif = obligatory_rif + plebiscite_rif) %>% 
+  select(cntry, obligatory_rif, initiative_rif, referendum_rif, plebiscite_rif, vdem_bottomup_rif, vdem_topdown_rif, vdem_total_rif)
+
+save(rif_vdem, file = "data/rif_vdem.Rdata")
+
+unique(vdems_start$country_name)
+
+# rif_vdem %>% 
+#   filter(str_detect(cntry, "Pol"))
+```
+
+## Navigator
+
+```{r}
+load("data/rif_navigator.Rdata")
+
+```
+
+
+# Create RiU
+
+## Ghergina 2016
+
+```{r}
+#load("data/vdems_start.Rdata")
+
+length(unique(vdems_start$country_name))
+```
+
+
+v2ddlexci	Initiatives permitted
+v2ddlevci	Initiatives level
+v2ddsignci	Initiatives signatures
+v2ddsigpci	Initiatives signatures %
+v2ddsiglci	Initiatives signature-gathering time limit
+v2ddsigdci	Initiatives signature-gathering period
+v2ddpartci	Initiatives participation threshold
+v2ddapprci	Initiatives approval threshold
+v2ddadmci	Initiatives administrative threshold
+v2ddspmci	Initiatives super majority
+v2ddthreci	Popular initiative credible threat
+v2ddyrci	Occurrence of citizen-initiative this year
+v2ddlexor	Constitutional changes popular vote
+v2ddpartor	Obligatory referendum participation threshold
+v2ddappor	Obligatory referendum approval threshold
+v2ddadmor	Obligatory referendum administrative threshold
+v2ddspmor	Obligatory referendum super majority
+v2ddthreor	Obligatory referendum credible threat
+v2ddyror	Occurrence of obligatory referendum this year
+v2ddlexpl	Plebiscite permitted
+v2ddlevpl	Plebiscite level
+v2ddpartpl	Plebiscite participation threshold
+v2ddapprpl	Plebiscite approval threshold
+v2ddadmpl	Plebiscite administrative threshold
+v2ddspmpl	Plebiscite super majority
+v2ddthrepl	Plebiscite approval threshold
+v2ddyrpl	Occurrence of plebiscite this year
+v2ddlexrf	Referendums permitted
+v2ddlevrf	Referendums level
+v2ddsignrf	Referendums signatures
+v2ddsigprf	Referendums signatures %
+v2ddsiglrf	Referendums signature-gathering limit
+v2ddsigdrf	Referendums signature-gathering period
+v2ddpartrf	Referendums participation threshold
+v2ddapprrf	Referendums approval threshold
+v2ddadmrf	Referendums administrative threshold
+v2ddspmrf	Referendums super majority
+v2ddthrerf	Referendums approval threshold
+v2ddyrrf	Occurrence of referendum this year
+v2ddyrall	Number of popular votes this year
+v2ddcredal	Occurrence of any type of popular vote this year credible
+
+```{r}
+# 
+# table(vdems_start$v2ddlexci)
+
+# give0 <- function(comein) {
+#   comein <- ifelse(is.na(comein), 0, comein)
+# }
+
+ghergina_2016 <- vdems_start %>% 
+  filter(year %in% 1996:2016) %>% 
+  #mutate_all(give0) %>%  
+  mutate(occ_referendum_vdem = v2ddyrrf) %>% 
+  mutate(occ_initiatives_vdem = v2ddyrci) %>% 
+  mutate(occ_plebiscite_vdem = v2ddyrpl) %>% 
+  mutate(occ_obligatory_vdem = v2ddyror) %>% 
+  mutate(occ_citizen_vdem = occ_referendum_vdem + occ_initiatives_vdem) %>% 
+  mutate(occ_state_vdem = occ_obligatory_vdem + occ_plebiscite_vdem) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(is.na(cntry), country_name, cntry)) %>% 
+  mutate(obligatory_participation_q = ifelse(v2ddpartor > 0, 1, 0)) %>% 
+  mutate(obligatory_approval_q = ifelse(v2ddappor > 0, 1, 0)) %>% 
+  mutate(obligatory_bindingness = v2ddlexor) %>% 
+  mutate(obligatory_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    obligatory_participation_q == 1 & obligatory_approval_q == 1 ~ 1,
+    obligatory_participation_q == 1 & obligatory_approval_q == 0 ~ 2,
+    obligatory_participation_q == 0 & obligatory_approval_q == 1 ~ 2,  
+    obligatory_participation_q == 0 & obligatory_approval_q == 0 ~ 3,
+    obligatory_bindingness == 0 ~ 0
+  )) %>% 
+  drop_na(obligatory_bindingness) %>% 
+  mutate(use_index_obligatory = occ_obligatory_vdem * obligatory_quorum) %>% 
+  mutate(initiative_bindingness = v2ddlexci) %>% 
+  mutate(initiative_participation_q = ifelse(v2ddpartci > 0, 1, 0)) %>% 
+  mutate(initiative_approval_q = ifelse(v2ddapprci > 0, 1, 0)) %>% 
+  mutate(initiative_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    initiative_participation_q == 1 & initiative_approval_q == 1 ~ 1,
+    initiative_participation_q == 1 & initiative_approval_q == 0 ~ 2,
+    initiative_participation_q == 0 & initiative_approval_q == 1 ~ 2,  
+    initiative_participation_q == 0 & initiative_approval_q == 0 ~ 3,
+    initiative_bindingness == 0 ~ 0
+  )) %>% 
+  drop_na(initiative_quorum) %>% 
+  mutate(use_index_initiative = case_when(
+    initiative_bindingness == 2 ~ occ_initiatives_vdem * initiative_quorum,
+    initiative_bindingness == 1 ~ (occ_initiatives_vdem/2) * initiative_quorum,
+    TRUE ~ occ_initiatives_vdem
+    )) %>%
+  mutate(referendum_bindingness = v2ddlexrf) %>% 
+  mutate(referendum_participation_q = ifelse(v2ddpartrf > 0, 1, 0)) %>% 
+  mutate(referendum_approval_q = ifelse(v2ddapprrf > 0, 1, 0)) %>% 
+  mutate(referendum_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    referendum_participation_q == 1 & referendum_approval_q == 1 ~ 1,
+    referendum_participation_q == 1 & referendum_approval_q == 0 ~ 2,
+    referendum_participation_q == 0 & referendum_approval_q == 1 ~ 2,  
+    referendum_participation_q == 0 & referendum_approval_q == 0 ~ 3,
+    referendum_bindingness == 0 ~ 0
+  )) %>% 
+  drop_na(referendum_quorum) %>% 
+  mutate(use_index_referendum = case_when(
+    referendum_bindingness == 2 ~ occ_referendum_vdem * referendum_quorum,
+    referendum_bindingness == 1 ~ (occ_referendum_vdem/2) * referendum_quorum,
+    TRUE ~ occ_referendum_vdem
+    )) %>%
+  mutate(plebiscite_bindingness = v2ddlexpl) %>% 
+  mutate(plebiscite_participation_q = ifelse(v2ddpartpl > 0, 1, 0)) %>% 
+  mutate(plebiscite_approval_q = ifelse(v2ddapprpl > 0, 1, 0)) %>% 
+  mutate(plebiscite_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    plebiscite_participation_q == 1 & plebiscite_approval_q == 1 ~ 1,
+    plebiscite_participation_q == 1 & plebiscite_approval_q == 0 ~ 2,
+    plebiscite_participation_q == 0 & plebiscite_approval_q == 1 ~ 2,  
+    plebiscite_participation_q == 0 & plebiscite_approval_q == 0 ~ 3,
+    plebiscite_bindingness == 0 ~ 0
+  )) %>% 
+  drop_na(plebiscite_quorum) %>% 
+  mutate(use_index_plebiscite = case_when(
+    plebiscite_bindingness == 2 ~ occ_plebiscite_vdem * plebiscite_quorum,
+    plebiscite_bindingness == 1 ~ (occ_plebiscite_vdem/2) * plebiscite_quorum,
+    TRUE ~ occ_plebiscite_vdem
+    )) %>%
+  mutate(use_index = use_index_obligatory + use_index_initiative + use_index_referendum + use_index_plebiscite) %>% #select(cntry, use_index, use_index_obligatory, use_index_initiative, use_index_referendum, use_index_plebiscite, plebiscite_bindingness, plebiscite_quorum, occ_referendum_vdem,
+#occ_initiatives_vdem,
+#occ_plebiscite_vdem, 
+#occ_obligatory_vdem ) %>% filter(cntry == "Albania")
+# "Albania"         "Australia"       "Latvia"          "Maldives"        "Montenegro"     
+# [6] "Myanmar (Burma)" "Niger"           "Somalia"         "Turkey"   
+  mutate(occ_all = v2ddyrall) %>% 
+  mutate(use_index_binding = case_when(
+    #binding referendas
+    initiative_bindingness == 2 ~ occ_initiatives_vdem * initiative_quorum,
+    referendum_bindingness == 2 ~ occ_referendum_vdem * referendum_quorum, 
+    plebiscite_bindingness == 2  ~ occ_plebiscite_vdem * plebiscite_quorum, 
+    occ_obligatory_vdem > 0  ~ occ_obligatory_vdem * obligatory_quorum,
+    TRUE ~ 0
+  )) %>% 
+  mutate(use_index_consultative = case_when(
+    #consultative referendas
+    initiative_bindingness == 1 ~ (occ_initiatives_vdem/2) * initiative_quorum,
+    referendum_bindingness == 1 ~ (occ_referendum_vdem/2) * referendum_quorum, 
+    plebiscite_bindingness == 1  ~ (occ_plebiscite_vdem/2) * plebiscite_quorum,
+    TRUE ~ 0
+  )) %>% 
+  #omitting weird ad hoc referendas
+  filter(cntry %nin% c("Montenegro", "Somalia", "South Sudan", "Zambia", "Zanzibar"))
+  # mutate(referendum_binding = case_when(
+  #   referendum_bindingness == 2  ~ 1L, 
+  #   referendum_bindingness == 1 ~ 0L,
+  #   TRUE ~ NA_integer_)
+  #   )
+
+
+# gherghina_2016 %>%
+#   select(use_index_binding) %>% 
+#   table()
+# 
+# gherghina_2016 %>%
+#   select(use_index_consultative) %>% 
+#   table()
+# 
+# gherghina_2016 %>%
+#   select(use_index) %>% 
+#   table()
+
+riu_ghergina <- ghergina_2016 %>%
+  group_by(cntry) %>% 
+  summarize(use_index_sum = sum(use_index, na.rm = T),
+            use_index_binding_sum = sum(use_index_binding, na.rm = T),
+            use_index_consultative_sum = sum(use_index_consultative, na.rm = T),
+            use_index_obligatory_sum = sum(use_index_obligatory, na.rm = T),
+            use_index_initiative_sum = sum(use_index_initiative, na.rm = T),
+            use_index_referendum_sum = sum(use_index_referendum, na.rm = T),
+            use_index_plebiscite_sum = sum(use_index_plebiscite, na.rm = T))
+#weird thing.. there are two seperate results for binding/consultative
+
+
+save(riu_ghergina, file = "data/riu_ghergina.Rdata")
+
+riu_ghergina %>%
+  select(use_index_sum) %>% 
+  table()
+
+
+#vdem_merger_2016[,3570:length(vdem_merger_2016)]
+
+# riu_ghergina %>% 
+#   filter(cntry == "Latvia") %>% select(use_index_referendum_sum)
+# 
+# riu_ghergina %>% 
+#   filter(cntry == "Latvia") %>% select(use_index_referendum)
+# 
+# vdems_missers <- vdem_merger_2016 %>% 
+#   select(country_name, v2ddpartor,v2ddappor,obligatory_quorum, occ_obligatory_vdem, initiative_quorum, v2ddpartci,v2ddapprci,use_index_referendum, referendum_quorum, v2ddpartrf,
+#          v2ddapprrf, plebiscite_quorum, v2ddpartpl,v2ddapprpl) %>% 
+#   
+#   filter(country_name == "Zanzibar") # excluding variables that have NA approval quorum
+# 
+# # "Albania"         "Australia"       "Latvia"          "Maldives"        "Montenegro"     
+# # [6] "Myanmar (Burma)" "Niger"           "Somalia"         "Turkey"   
+# 
+# pacman::p_load(naniar)
+
+# vis_miss(vdems_missers)
+# 
+# # DUMB MEGA INDEX
+# weirdo <- vdem_merger_2016_summed %>% 
+#   left_join(idea_fin, by = "cntry") %>% 
+#   mutate(weird_index = range01(log((dd_total, range01(use_index_sum)) + 1))) %>% 
+#   select(cntry, weird_index) %>% 
+#   arrange(weird_index) %>% 
+#   ggplot(aes(weird_index)) + geom_histogram()
+
+#select(cntry, use_index, use_index_obligatory, use_index_initiative, use_index_referendum, use_index_plebiscite, plebiscite_bindingness, plebiscite_quorum) %>% filter(cntry == "Albania")
+```
+
+
+## Simple Count
+
+### vdem
+
+```{r}
+riu_vdem_sum <- vdems_start %>% 
+  filter(year %in% 1996:2016) %>% 
+  #mutate_all(give0) %>% 
+  mutate(occ_referendum_vdem = v2ddyrrf) %>% 
+  mutate(occ_initiatives_vdem = v2ddyrci) %>% 
+  mutate(occ_plebiscite_vdem = v2ddyrpl) %>% 
+  mutate(occ_obligatory_vdem = v2ddyror) %>% 
+  mutate(occ_all = v2ddyrall) %>% 
+  mutate(occ_credible = v2ddcredal) %>% 
+  mutate(occ_citizen_vdem = occ_referendum_vdem + occ_initiatives_vdem) %>% 
+  mutate(occ_state_vdem = occ_obligatory_vdem + occ_plebiscite_vdem) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(is.na(cntry), country_name, cntry)) %>% 
+  group_by(cntry) %>% 
+  summarise(occ_referendum_vdem_sum = sum(occ_referendum_vdem, na.rm = T),
+            occ_initiatives_vdem_sum = sum(occ_initiatives_vdem, na.rm = T),
+            occ_plebiscite_vdem_sum = sum(occ_plebiscite_vdem, na.rm = T),
+            occ_obligatory_vdem_sum = sum(occ_obligatory_vdem, na.rm = T),
+            occ_all_vdem_sum = sum(occ_all, na.rm = T),
+            occ_citizen_vdem_sum = sum(occ_citizen_vdem, na.rm = T),
+            occ_state_vdem_sum = sum(occ_state_vdem, na.rm = T),
+            occ_referendum_vdem_sum = sum(occ_referendum_vdem, na.rm = T),
+            occ_credible_sum = sum(occ_credible, na.rm = T))
+
+# riu_vdem_sum %>% select(occ_all_vdem) %>% 
+#   table()
+
+save(riu_vdem_sum, file = "data/riu_vdem_sum.Rdata")
+
+
+```
+
+### sudd
+
+```{r}
+load("data/sudd_dat_merger.Rdata")
+
+riu_sudd_sum <- sudd_dat_merger %>% 
+  filter(year %in% 1996:2016) %>% 
+  group_by(cntry) %>% 
+  summarise(occ_referendum_sudd_sum = sum(occ_referendum_sudd, na.rm = T),
+            occ_initiatives_sudd_sum = sum(occ_initiatives_sudd, na.rm = T),
+            occ_citizen_sudd_sum = sum(occ_citizen_sudd, na.rm = T),
+            occ_obligatory_sudd_sum = sum(occ_obligatory_sudd, na.rm = T),
+            occ_plebiscite_sudd_sum = sum(occ_plebiscite_sudd, na.rm = T),
+            occ_state_sudd_sum = sum(occ_state_sudd, na.rm = T),
+            occ_all_sudd_sum = sum(occ_all_sudd, na.rm = T)) %>% 
+  mutate(occ_state_sudd_sum = ifelse(occ_state_sudd_sum == 0, NA, occ_state_sudd_sum)) %>% 
+  mutate(occ_citizen_sudd_sum = ifelse(occ_citizen_sudd_sum == 0, NA, occ_citizen_sudd_sum))   
+
+save(riu_sudd_sum, file = "data/riu_sudd_sum.Rdata")
+```
+
+
+## Categorization (Blume)
+
+```{r}
+recode_cat <- function(variables) {
+case_when(
+    variables == 0 ~ 0,
+    variables %in% 1:2 ~ 1,    
+    variables %in% 3:4 ~ 2,
+    variables %in% 5:6 ~ 3,  
+    variables %in% 7:8 ~ 4,  
+    variables %in% 9:100000 ~ 5  
+    )
+}
+```
+
+
+### Vdem
+
+```{r}
+load("data/riu_vdem_sum.Rdata")
+
+riu_vdem_cat <- riu_vdem_sum %>% 
+  mutate_if(.predicate = is_double, recode_cat) %>% 
+  transmute(cntry = cntry,
+            occ_referendum_vdem_cat = occ_referendum_vdem_sum,
+            occ_initiatives_vdem_cat = occ_initiatives_vdem_sum,
+            occ_plebiscite_vdem_cat = occ_plebiscite_vdem_sum,
+            occ_obligatory_vdem_cat = occ_obligatory_vdem_sum,
+            occ_all_vdem_cat = occ_all_vdem_sum,
+            occ_citizen_vdem_cat = occ_citizen_vdem_sum,
+            occ_state_vdem_cat = occ_state_vdem_sum,
+            occ_credible_cat = occ_credible_sum)
+
+save(riu_vdem_cat, file = "data/riu_vdem_cat.Rdata")
+```
+
+### sudd
+
+```{r}
+load("data/riu_sudd_sum.Rdata")
+
+riu_sudd_cat <- riu_sudd_sum %>% 
+  mutate_if(.predicate = is_double, recode_cat) %>% 
+  transmute(cntry = cntry,
+            occ_referendum_sudd_cat = occ_referendum_sudd_sum,
+            occ_initiatives_sudd_cat = occ_initiatives_sudd_sum,
+            occ_plebiscite_sudd_cat = occ_plebiscite_sudd_sum,
+            occ_obligatory_sudd_cat = occ_obligatory_sudd_sum,
+            occ_all_sudd_cat = occ_all_sudd_sum,
+            occ_citizen_sudd_cat = occ_citizen_sudd_sum,
+            occ_state_sudd_cat = occ_state_sudd_sum)
+
+save(riu_sudd_cat, file = "data/riu_sudd_cat.Rdata")
+```
+
+
+## Mean Use (Bauer Fatke )
+
+### vdem
+
+```{r}
+riu_vdem_mean <- vdems_start %>% 
+  filter(year %in% 1996:2016) %>% 
+  #mutate_all(give0) %>% 
+  mutate(occ_referendum_vdem = v2ddyrrf) %>% 
+  mutate(occ_initiatives_vdem = v2ddyrci) %>% 
+  mutate(occ_plebiscite_vdem = v2ddyrpl) %>% 
+  mutate(occ_obligatory_vdem = v2ddyror) %>% 
+  mutate(occ_all = v2ddyrall) %>% 
+  mutate(occ_credible = v2ddcredal) %>% 
+  mutate(occ_citizen_vdem = occ_referendum_vdem + occ_initiatives_vdem) %>% 
+  mutate(occ_state_vdem = occ_obligatory_vdem + occ_plebiscite_vdem) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(is.na(cntry), country_name, cntry)) %>% 
+  group_by(cntry) %>% 
+  summarise(occ_referendum_vdem = mean(occ_referendum_vdem, na.rm = T),
+            occ_initiatives_vdem = mean(occ_initiatives_vdem, na.rm = T),
+            occ_plebiscite_vdem = mean(occ_plebiscite_vdem, na.rm = T),
+            occ_obligatory_vdem = mean(occ_obligatory_vdem, na.rm = T),
+            occ_all = mean(occ_all, na.rm = T),
+            occ_citizen_vdem = mean(occ_citizen_vdem, na.rm = T),
+            occ_state_vdem = mean(occ_state_vdem, na.rm = T),
+            occ_referendum_vdem = mean(occ_referendum_vdem, na.rm = T),
+            occ_credible = mean(occ_credible, na.rm = T))
+
+save(riu_vdem_mean, file = "data/riu_vdem_mean.Rdata")
+```
+
+### sudd
+
+```{r}
+load("data/sudd_dat_merger.Rdata")
+
+riu_sudd_mean <- sudd_dat_merger %>% 
+  filter(year %in% 1996:2016) %>% 
+  group_by(cntry) %>% 
+  summarise(occ_referendum_sudd = mean(occ_referendum_sudd, na.rm = T),
+            occ_initiatives_sudd = mean(occ_initiatives_sudd, na.rm = T),
+            occ_citizen_sudd = mean(occ_citizen_sudd, na.rm = T),
+            occ_obligatory_sudd = mean(occ_obligatory_sudd, na.rm = T),
+            occ_plebiscite_sudd = mean(occ_plebiscite_sudd, na.rm = T),
+            occ_state_sudd = mean(occ_state_sudd, na.rm = T),
+            occ_all_sudd = mean(occ_all_sudd, na.rm = T)) 
+
+save(riu_sudd_mean, file = "data/riu_sudd_mean.Rdata")
+```
+
+## Effective Use
+
+```{r}
+load("data/demdata.Rdata")
+
+riu_dembarometer <- demdata %>% 
+  filter(year %in% 1996:2014) %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(range01(eff_dd), na.rm = T))
+
+save(riu_dembarometer, file = "data/riu_dembarometer.Rdata")
+
+```
+
+
+
+# Mixed
+
+
+
+## Fiorino 2017
+
+```{r}
+
+fiorino_dat <- rbind(
+# 1
+data.frame(cntry = c("Afghanistan", "Armenia", "Azerbaijan", "Belarus", "Bhutan", "Bolivia", "Brunei", "Cambodia", "China", "Costa Rica", "Honduras", "Indonesia", "Laos", "Malaysia", "Mexico", "Mongolia", "Nepal", "Nicaragua", "Pakistan", "Russia", "Singapore", "Sri Lanka", "Thailand", "Ukraine", "Vietnam"), ddi = 1),
+
+#2
+data.frame(cntry = c("Albania", "Argentina", "Bangladesh", "Brazil", "Chile", "El Salvador", "Georgia", "Guatemala", "Kazakhstan", "Kyrgyzstan", "Macedonia", "Maldives", "Moldova", "Panama", "Tajikistan", "Turkey", "Turkmenistan", "Uzbekistan"), ddi = 2),
+
+#3
+data.frame(cntry = c("Colombia", "Croatia", "Cyprus", "Ecuador", "Greece", "Iceland", "Paraguay", "Peru", "Venezuela"), ddi = 3),
+
+#4
+data.frame(cntry = c("Estonia", "Finland", "Germany", "Hungary", "India", "Japan", "Malta", "Romania", "South Korea", "Taiwan", "United Kingdom"), ddi = 4),
+
+#5
+data.frame(cntry = c("Austria", "Belgium", "Bulgaria", "Czech Republic", "France", "Latvia", "Luxembourg", "Norway", "Poland", "Portugal", "Spain", "Sweden", "Uruguay"), ddi = 5),
+
+#6
+data.frame(cntry = c("Australia", "Denmark", "Ireland", "Italy", "Lithuania", "Netherlands", "New Zealand", "Philippines", "Slovak Republic", "Slovenia"), ddi = 6),
+
+#7
+data.frame(cntry = c("Switzerland"), ddi = 7)
+) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name"))
+
+save(fiorino_dat, file = "data/fiorino_dat.Rdata")
+
+
+```
+
+## VDEM
+
+Citizen-initiated component of direct popular vote index (D) (v2xdd_cic)
+Top-Down component of direct popular vote index (D) (v2xdd_toc)
+
+```{r}
+load("data/vdems_start.Rdata")
+
+vdem_fiorino <- vdems_start %>% 
+  filter(year %in% 2000:2005) %>% 
+  mutate(dd_vdem = v2xdd_dd) %>% 
+  group_by(country_name) %>% 
+  summarise(dd_vdem = mean(dd_vdem, na.rm = T)) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(country_name == "Democratic Republic of Vietnam", "Viet Nam", cntry)) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) 
+
+save(vdem_fiorino, file = "data/vdem_fiorino.Rdata")
+
+vdem_tdbu <- vdems_start %>% 
+  filter(year %in% 2000:2005) %>% 
+  mutate(dd_vdem = v2xdd_dd) %>% 
+  group_by(country_name) %>% 
+  summarise(bottomup_altmann = mean(v2xdd_cic, na.rm = T),
+            atopdown_altmann = mean(v2xdd_toc, na.rm = T)) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(country_name == "Democratic Republic of Vietnam", "Viet Nam", cntry)) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) %>% 
+  select(cntry, atopdown_altmann, bottomup_altmann)
+
+save(vdem_tdbu, file = "data/vdem_tdbu.Rdata")
+```
+
+
+# Comparison
+
+## Rules in Form
+
+### Ghergina und Peters
+
+```{r}
+range01 <- function(x){(x-min(x, na.rm = T))/(max(x, na.rm = T)-min(x, na.rm = T))}
+
+plot_gherg_peters <- idea_fin %>% 
+  select(cntry, mandatory , optional , citizen , agenda , recall, dd_national,
+         mandatory_regional, optional_regional, citizen_regional, agenda_regional,
+         recall_regional, dd_regional,  mandatory_local, optional_local,
+         citizen_local, agenda_local, recall_local, dd_local, dd_regloc, dd_total, bottom_up, top_down) %>% 
+  left_join(idea_peters, by = "cntry") %>% 
+  mutate(dd_national = range01(dd_national)) %>% 
+  mutate(total_index = range01(total_index)) %>% 
+  mutate(diff = .2 < abs(total_index - dd_national)) #%>% #select(diff) %>% table()
+
+plot_gherg_peters  %>% 
+  ggplot(aes(dd_national, total_index, colour = diff)) +
+  geom_jitter() + 
+  geom_smooth(data = plot_gherg_peters %>% filter(diff == F), method = "lm", se = F) +
+  geom_ribbon(data = plot_gherg_peters %>% filter(diff == F), 
+              aes(ymin = dd_national - .21, ymax = dd_national + .21), 
+               fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor(data = plot_gherg_peters %>% filter(diff == F)) +
+  ggrepel::geom_text_repel(data = plot_gherg_peters %>% filter(diff == TRUE), aes(label = cntry))
+
+plot_gherg_peters  %>% 
+  ggplot(aes(as.factor(dd_national), total_index, colour = diff)) +
+  geom_violin() 
+
+
+
+pacman::p_load(ggridges)
+
+plot_gherg_peters %>% 
+  select(dd_national, dd_regional, dd_local) %>% 
+  mutate_all(range01) %>% 
+  gather() %>% 
+  mutate(key = fct_infreq(key)) %>% 
+ggplot(aes(x = value, y = key)) + 
+  geom_density_ridges() + theme_ridges()
+
+
+plot_gherg_peters %>% 
+  select(total_index, bottom_up_index, top_down_index) %>% 
+  mutate_all(range01) %>% 
+  gather() %>% 
+  mutate(key = fct_infreq(key)) %>% 
+ggplot(aes(x = value, y = key)) + 
+  geom_density_ridges() + theme_ridges()
+
+
+
+
+```
+
+### Democracy Barometer
+
+```{r}
+demdata %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(eff_dd, na.rm = T),
+            dirdem = sum(dirdem, na.rm = T),
+            dd_quora = sum(dd_quora, na.rm = T)) %>% 
+  left_join(plot_gherg_peters, by = "cntry") %>% 
+  ggplot(aes(dirdem, total_index)) +
+  geom_jitter() + 
+  geom_smooth(method = "lm", se = F) +
+  ggpubr::stat_cor()# +
+  #ggrepel::geom_text_repel(aes(label = cntry))
+
+demdata %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(eff_dd, na.rm = T),
+            dirdem = sum(dirdem, na.rm = T),
+            dd_quora = sum(dd_quora, na.rm = T)) %>% 
+  left_join(plot_gherg_peters, by = "cntry") %>% 
+  ggplot(aes(dirdem, dd_national)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  ggpubr::stat_cor()
+  
+```
+### vdem
+
+```{r}
+
+```
+
+### navigator
+
+```{r}
+load("data/rif_navigator.Rdata")
+
+navigator_dat %>% 
+  left_join(plot_gherg_peters, by = "cntry") %>% 
+  ggplot(aes(local, dd_local)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  ggpubr::stat_cor() +
+  geom_text(aes(label = cntry))
+  
+```
+
+
+## Rules in Use
+
+### Ghergina und Sudd
+
+```{r}
+load("data/sudd_dat_merger.Rdata")
+
+gherg_sudd <- sudd_dat_merger %>% 
+  ungroup() %>% 
+  mutate(year = as.numeric(year)) %>% 
+  filter(year %in% 1996:2016) %>% 
+  group_by(cntry) %>% 
+  summarise_if(is_double, sum) %>% 
+  select(-year) %>% 
+  left_join(vdem_merger_2016_summed, by = "cntry") %>% 
+  mutate(occ_all_sudd = occ_state_sudd + occ_citizen_sudd) %>% 
+  arrange(desc(occ_all_sudd)) %>% 
+  mutate(diff = use_index_sum - occ_all_sudd) %>% 
+  arrange(desc(diff)) %>% 
+  mutate(diff = abs(diff) > 10)
+
+gherg_sudd %>% 
+  filter(cntry %nin% c("Switzerland", "Azerbaijan")) %>% 
+  ggplot(aes(x = occ_all_sudd, y = use_index_sum, colour = diff)) +
+  geom_jitter() + 
+  geom_smooth(method = "lm", se = F) +
+  geom_ribbon(aes(ymin = occ_all_sudd - .21, ymax = occ_all_sudd + .21), 
+               fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor() +
+  ylim(0, 70) + xlim (0, 70)
+  #ggrepel::geom_text_repel(aes(label = cntry))
+
+```
+
+### Ghergina und Vdem
+
+```{r}
+#load("data/sudd_dat_merger.Rdata")
+
+gherg_vdem <- vdem_merger_count %>% 
+  # group_by(cntry) %>% 
+  # summarise_if(is_double, sum) %>% 
+  left_join(vdem_merger_2016_summed, by = "cntry") %>% 
+  filter(cntry %nin% c("Switzerland", "Azerbaijan")) 
+
+gherg_vdem %>% 
+  mutate(diff = use_index_sum - occ_all) %>% 
+  arrange(desc(diff)) %>% 
+  mutate(diff = abs(diff) > 10) %>%
+  arrange(desc(diff)) %>% 
+  ggplot(aes(x = occ_all, y = use_index_sum, colour = diff)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  # geom_ribbon(aes(ymin = occ_all - 20, ymax = occ_all + 20), 
+  #              fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor() #+
+ # ggrepel::geom_text_repel(data = gherg_vdem %>% filter(occ_all >= 1 & use_index_sum == 0), aes(label = cntry))
+
+
+gherg_vdem %>% 
+  filter(occ_all >= 1 & use_index_sum == 0) %>% .$cntry
+```
+
+### Gherghina/Sudd/Vdem und Democracy Barometer
+
+```{r}
+load("data/demdata.Rdata")
+
+demdata %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(eff_dd, na.rm = T),
+            dirdem = sum(dirdem, na.rm = T),
+            dd_quora = sum(dd_quora, na.rm = T)) %>% 
+  left_join(gherg_sudd, by = "cntry") %>% 
+  mutate(diff = eff_dd - use_index_sum) %>% 
+  arrange(desc(diff)) %>% 
+  mutate(diff = abs(diff) > 10)%>% 
+  filter(cntry %nin% c("Switzerland", "Azerbaijan")) %>% 
+  arrange(desc(diff)) %>% 
+  ggplot(aes(x = eff_dd, y = use_index_sum, colour = diff)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  # geom_ribbon(aes(ymin = occ_all - 20, ymax = occ_all + 20), 
+  #              fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor() +
+ ggrepel::geom_text_repel(aes(label = cntry))
+
+
+
+demdata %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(eff_dd, na.rm = T),
+            dirdem = sum(dirdem, na.rm = T),
+            dd_quora = sum(dd_quora, na.rm = T)) %>% 
+  left_join(gherg_sudd, by = "cntry") %>% 
+  mutate(diff = eff_dd - occ_citizen_sudd) %>% 
+  arrange(desc(diff)) %>% 
+  mutate(diff = abs(diff) > 10)%>% 
+  filter(cntry %nin% c("Switzerland", "Azerbaijan")) %>% 
+  arrange(desc(diff)) %>% 
+  ggplot(aes(x = eff_dd, y = occ_citizen_sudd, colour = diff)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  # geom_ribbon(aes(ymin = occ_all - 20, ymax = occ_all + 20), 
+  #              fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor() 
+
+
+
+demdata %>% 
+  group_by(cntry) %>% 
+  summarise(eff_dd = sum(eff_dd, na.rm = T),
+            dirdem = sum(dirdem, na.rm = T),
+            dd_quora = sum(dd_quora, na.rm = T)) %>% 
+  left_join(vdem_merger_count, by = "cntry") %>% 
+  mutate(diff = eff_dd - occ_all) %>% 
+  arrange(desc(diff)) %>% 
+  mutate(diff = abs(diff) > 10)%>% 
+  filter(cntry %nin% c("Switzerland", "Azerbaijan")) %>% 
+  arrange(desc(diff)) %>% 
+  ggplot(aes(x = eff_dd, y = occ_all, colour = diff)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  # geom_ribbon(aes(ymin = occ_all - 20, ymax = occ_all + 20), 
+  #              fill = "gray70", alpha = 0.2, colour=NA) +
+  ggpubr::stat_cor() 
+
+```
+
+
+## Mixed
+
+### Fiorino und Altmann
+
+```{r}
+vdem_fiorino <- vdems_start %>% 
+  filter(year %in% 2000:2005) %>% 
+  mutate(dd_vdem = v2xdd_dd) %>% 
+  group_by(country_name) %>% 
+  summarise(dd_vdem = mean(dd_vdem, na.rm = T)) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(country_name == "Democratic Republic of Vietnam", "Viet Nam", cntry)) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) 
+
+
+fiorino_dat %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) %>% 
+  left_join(vdem_fiorino, by = "cntry") %>% 
+  select(-country_name) %>% 
+  ggplot(aes(x = ddi, y = dd_vdem)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor() +
+  ggrepel::geom_text_repel(aes(label = cntry))
+
+
+unique(vdems_start$country_text_id)
+
+# just for fun
+idea_fin %>% 
+  left_join(fiorino_dat, by = "cntry") %>% 
+  ggplot(aes(x = ddi, y = dd_national)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor() +
+  ggrepel::geom_text_repel(aes(label = cntry))
+
+
+
+
+vdem_fiorino %>% 
+  left_join(weirdo, by = "cntry") %>% 
+  mutate(dd_vdem = range01(dd_vdem)) %>% 
+  #select(-country_name) %>% 
+  ggplot(aes(x = dd_vdem, y = weird_index)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor() #+
+  #ggrepel::geom_text_repel(aes(label = cntry))
+```
+
+
+
+# Maps
+
+```{r}
+WorldData <- map_data('world')
+WorldData %>% filter(region != "Antarctica") -> WorldData
+WorldData <- fortify(WorldData)
+
+df <- fiorino_dat %>% 
+  mutate(region = cntry) %>% 
+  mutate(value = ddi) %>% 
+  select(region, value)
+
+df <- vdem_fiorino %>% 
+  mutate(region = cntry) %>% 
+  mutate(value = dd_vdem) %>% 
+  select(region, value)
+
+df <- data.frame(region=c('Hungary','Lithuania','Argentina'), 
+                 value=c(4,10,11), 
+                 stringsAsFactors=FALSE)
+
+
+
+p <- ggplot()
+p <- p + geom_map(data=WorldData, map=WorldData,
+                  aes(x=long, y=lat, group=group, map_id=region),
+                  fill="white", colour="#7f7f7f", size=0.5)
+p <- p + geom_map(data=df, map=WorldData,
+                  aes(fill=value, map_id=region),
+                  colour="#7f7f7f", size=0.5)
+p <- p + coord_map("rectangular", lat0=0, xlim=c(-180,180), ylim=c(-60, 90))
+p <- p + scale_fill_continuous(low="thistle2", high="darkred", 
+                               guide="colorbar")
+p <- p + scale_y_continuous(breaks=c())
+p <- p + scale_x_continuous(breaks=c())
+p <- p + labs(fill="legend", title="Title", x="", y="")
+p <- p + ggthemes::theme_hc()
+p <- p + theme(panel.border = element_blank())
+p 
+```
+
+
+

@@ -1,0 +1,868 @@
+---
+title: "Data Wrangling"
+output: html_notebook
+---
+
+# Load in Packages
+
+```{r}
+pacman::p_load(tidyverse, magrittr, countrycode, sjmisc)
+```
+
+
+
+# sudd data
+
+```{r}
+load("data/sudd_dat.Rdata")
+
+sudd_dat %>% 
+  filter(stellung != "unabhaengiger Staat")
+
+length(unique(sudd_dat$gebiet))
+table(sudd_dat$datum)
+# More Notes: 1. Vorlage/2. Vorlage muss in jeweils zwei Fälle gesplittet werden
+sudd_dat %<>% 
+  mutate(id = 1:n()) 
+
+sudd_dat %<>% 
+   filter(str_detect(abstimmungstyp, "1.")) %>% 
+   select(abstimmungstyp, id) %>% 
+  # # split(.$id) %>%
+  # # map(~str_split(.x$abstimmungstyp, "\n")) %>%
+  # # map(~str_detect(.x, "Stichfrage"))
+  # mutate(splitter = str_split(abstimmungstyp, "\n")) %>%
+  # select(splitter) %>%
+  tidytext::unnest_tokens(stage,
+                          abstimmungstyp,
+                          token = "regex",
+                          pattern = "\n",
+                          to_lower = F) %>%
+  mutate(stage = ifelse(str_detect(stage, "Stichfrage") | str_detect(stage, "Nein zu allem"),
+                        NA, stage)) %>%
+  na.omit() %>%
+  full_join(sudd_dat, by = "id") %>%
+  mutate(abstimmungstyp = ifelse(!is.na(stage), stage, abstimmungstyp)) %>%
+  select(-stage)
+
+# cleaning tree
+sudd_dat %<>% 
+  # results of referendum
+  mutate(results = case_when(
+    stringr::str_detect(ergebnis, "verworfen") ~ "unsuccessful",
+    stringr::str_detect(ergebnis, "keine Option angenommen") ~ "unsuccessful",
+    stringr::str_detect(ergebnis, "angenommen") ~ "successful",   
+    stringr::str_detect(ergebnis, "keine Mehrheit") ~ "unsuccessful",
+    stringr::str_detect(ergebnis, "kassiert") ~ "unsuccessful",
+    TRUE ~ NA_character_
+  )) %>% 
+  mutate(success = ifelse(results == "successful", 1, 0)) %>% 
+  # calculate participation rate
+  mutate(participation = stringr::str_replace_all(stimmbeteiligung, "'", "")) %>% 
+  mutate(participation = ifelse(participation == "---", NA_character_, participation) %>% 
+           as.numeric()) %>% 
+  mutate(total_peeps = stringr::str_replace_all(stimmberechtigte, "'", "")) %>% 
+  mutate(total_peeps = ifelse(total_peeps == "---", NA_character_, total_peeps) %>% 
+           as.numeric()) %>% 
+  mutate(ratio = participation/total_peeps) %>% 
+  filter(gebiet != "Maghrebinien") %>% # filter out Maghrebinien because it has odd particiation (>100)
+  # Was the territory independent?
+  mutate(entity = case_when(
+    stellung == "unabhaengiger Staat" ~ "independent",
+    TRUE ~ "dependent"
+  )) %>%   
+  # Bottom Up or Top Down referendum?
+  mutate(bottom_up = case_when(
+    str_detect(abstimmungstyp, "durch Volk") ~ "1",
+    str_detect(abstimmungstyp, "durch Parlament") ~ "0",
+    str_detect(abstimmungstyp, "durch Staatsrat") ~ "0",
+    str_detect(abstimmungstyp, "durch Parlamentsminderheit") ~ "0",
+    str_detect(abstimmungstyp, "durch Regionalraete") ~ "0",
+    str_detect(abstimmungstyp, "durch Senatsminderheit") ~ "0",
+    str_detect(abstimmungstyp, "durch Regierung des Mutterlands") ~ "0",
+    str_detect(abstimmungstyp, "durch Verfassungsrat") ~ "0",
+    str_detect(abstimmungstyp, "durch Gemeinden") ~ "0",
+    str_detect(abstimmungstyp, "durch Gemeinderaete") ~ "0",
+    str_detect(abstimmungstyp, "durch Praesident") ~ "0",
+    str_detect(abstimmungstyp, "durch Regierung") ~ "0",
+    str_detect(abstimmungstyp, "durch Exekutive") ~ "0",
+    str_detect(abstimmungstyp, "durch Emir") ~ "0",
+    str_detect(abstimmungstyp, "durch C\034bergangsparlament") ~ "0",    
+    str_detect(abstimmungstyp, "durch Gouverneur") ~ "0",
+    str_detect(abstimmungstyp, "durch Frankreich/BRD") ~ "0",
+    str_detect(abstimmungstyp, "durch Generalgouverneur") ~ "0",
+    str_detect(abstimmungstyp, "durch Kaiser") ~ "0",
+    str_detect(abstimmungstyp, "durch KC6nig") ~ "0",
+    str_detect(abstimmungstyp, "durch ZentralbehC6rden") ~ "0",
+    str_detect(abstimmungstyp, "durch Administrator") ~ "0",
+    str_detect(abstimmungstyp, "durch Fuerst") ~ "0",
+    str_detect(abstimmungstyp, "durch KolonialbehC6rden") ~ "0",
+    str_detect(abstimmungstyp, "durch Militaerrat") ~ "0",
+    str_detect(abstimmungstyp, "durch Lokalregierung") ~ "0",
+    str_detect(abstimmungstyp, "durch Militaerregierung") ~ "0",
+    str_detect(abstimmungstyp, "durch Regenz") ~ "0",
+    str_detect(abstimmungstyp, "durch Regent") ~ "0",
+    str_detect(abstimmungstyp, "durch Schah") ~ "0",
+    str_detect(abstimmungstyp, "durch Sultan") ~ "0",
+    str_detect(abstimmungstyp, "durch US-Regierung") ~ "0",
+    str_detect(abstimmungstyp, "durch UNO") ~ "0",
+    str_detect(abstimmungstyp, "durch WahlbehC6rde") ~ "0",
+    str_detect(abstimmungstyp, "durch Konsul") ~ "0",
+    str_detect(abstimmungstyp, "durch Ministerium") ~ "0",
+    str_detect(abstimmungstyp, "durch Inselrat") ~ "0",
+    str_detect(abstimmungstyp, "durch Notablenversammlung") ~ "0",
+    str_detect(abstimmungstyp, "durch Staatspraesident") ~ "0",
+    str_detect(abstimmungstyp, "durch Stadtregierung") ~ "0",
+    str_detect(abstimmungstyp, "durch VC6lkerbund") ~ "0",
+    str_detect(abstimmungstyp, "durch Verwaltung") ~ "0",
+    str_detect(abstimmungstyp, "durch Ministerpraesident") ~ "0",
+    str_detect(abstimmungstyp, "durch Automatisch") ~ "0",
+    str_detect(abstimmungstyp, "durch Tagsatzung") ~ "0",
+    str_detect(abstimmungstyp, "durch Sejm") ~ "0",
+    str_detect(abstimmungstyp, "durch Caudillo") ~ "0",
+    TRUE ~ NA_character_
+  )) %>% 
+  # What is being decided? (Law, Electing Kings/Emperors)
+  mutate(level = ifelse(str_detect(abstimmungstyp, "Stufe:"), 
+                        str_extract(abstimmungstyp, "Stufe:.*$") %>% 
+                          stringr::str_replace(., "Stufe: ", ""), NA)) %>% #there is a few NA that need to be fixed
+  # Was the referendum binding?
+  mutate(bindingness = case_when(
+    str_detect(abstimmungstyp, "nicht bindend") ~ "non-binding",
+    str_detect(abstimmungstyp, "je nach Stimmverhalten bindend") ~ "sometimes binding",    
+    str_detect(abstimmungstyp, "bindend") ~ "binding",
+    str_detect(abstimmungstyp, "ad hoc") ~ "non-binding",   # ad hoc will be nonbinding
+    TRUE ~ NA_character_)) %>% 
+  # Type of referendum? (inofficial, plebsicite, obligatory, non-obligatory, initiative)
+  mutate(type = case_when(
+    str_detect(abstimmungstyp, "Inoffizielle Abstimmung") ~ "inofficial",
+    str_detect(abstimmungstyp, "Plebiszit") ~ "plebiscite",    
+    str_detect(abstimmungstyp, "Obligatorisch") ~ "obligatory",
+    str_detect(abstimmungstyp, "Fakultativ") ~ "non-obligatory",
+    str_detect(abstimmungstyp, "Initiative") ~ "initiative",
+    TRUE ~ abstimmungstyp)) %>% 
+  #but wait there is more dependents
+  mutate(gebiet = case_when(
+    str_detect(gebiet, "Suedossetien") ~ "dependent",
+    str_detect(gebiet, "Berg-Karabach") ~ "dependent",   
+    str_detect(gebiet, "Abchasien") ~ "dependent",
+    str_detect(gebiet, "Szeklerland") ~ "dependent",
+    str_detect(gebiet, "Transnistrische") ~ "dependent",
+    str_detect(gebiet, "Anjouan") ~ "dependent",
+    str_detect(gebiet, "Krim") ~ "dependent",
+    str_detect(gebiet, "Suedvietnam") ~ "dependent",
+    str_detect(gebiet, "Maryland in Liberia") ~ "dependent",
+    str_detect(gebiet, "Texas") ~ "dependent",
+    str_detect(gebiet, "Lucca") ~ "dependent",
+    str_detect(gebiet, "Venedig") ~ "dependent",
+    str_detect(gebiet, "Ligurische") ~ "dependent",
+    str_detect(gebiet, "Cispadanische") ~ "dependent",
+    str_detect(gebiet, "Cisalpinische") ~ "dependent",
+    TRUE ~ gebiet
+  )) %>% 
+  filter(entity == "independent") #%>% #CHECKING FOR WEIRDO COUNTRIES
+ #filter(str_detect(gebiet, "\\("))
+
+# More Notes: 1. Vorlage/2. Vorlage muss in jeweils zwei Fälle gesplittet werden
+# unmatch_clusterfuck <- sudd_dat %>%
+#   filter(type == "obligatory") %>%
+#   filter(bottom_up == 1) %>%
+#   select(abstimmungstyp) %>%
+#   .$abstimmungstyp
+# 
+# sudd_dat %<>%
+#   filter(abstimmungstyp %nin% unmatch_clusterfuck)
+
+
+# Fixing the countries
+
+sudd_dat %<>% 
+  mutate(gebiet = case_when(
+    str_detect(gebiet, "Tuerkei") ~ "Türkei", 
+    str_detect(gebiet, "aegypten") ~ "Ägypten", 
+    str_detect(gebiet, "C\026sterreich") ~ "Österreich",     
+    str_detect(gebiet, "Rumaenien") ~ "Rumänien",  
+    str_detect(gebiet, "SC#o TomC\\) e Principe") ~ "São Tomé und Príncipe",  
+    str_detect(gebiet, "Suedafrika") ~ "Südafrika",  
+    TRUE ~ gebiet)
+    ) %>% 
+  mutate(cntry = countrycode(gebiet, "country.name.de", "country.name")) %>% 
+  mutate(cntry = case_when(
+    str_detect(gebiet, "Mikronesischer Staatenbund") ~ "Micronesian federation", 
+    str_detect(gebiet, "Sealand") ~ "Sealand", 
+    str_detect(gebiet, "Bundesrepublik Deutschland") ~ "Germany", 
+    str_detect(gebiet, "Deutsches Reich") ~ "Germany", 
+    gebiet == "Moldawien" ~ "Moldova", 
+    TRUE ~ cntry)
+  )
+
+# Fixing the initiatives in Urugay (that should be PLEBISCITES)
+sudd_dat %<>%
+  mutate(type = ifelse(gebiet == "Uruguay" & type == "initiative" & bottom_up == 0, "plebiscite", type))
+
+# More Notes: Non-Obligatory Referandas by the State are Plebiscites
+sudd_dat %<>%
+  mutate(type = ifelse(type == "non-obligatory" & bottom_up == 0, "plebiscite", type))
+
+# Fixing the initiatives in Slovenia (that should be PLEBISCITES)
+sudd_dat %<>%
+  mutate(type = ifelse(gebiet == "Slowenien" & type == "initiative" & bottom_up == 0, "plebiscite", type))
+
+# adding the years
+needed_years <- 1776:2018 %>%
+  as.character() %>%
+  paste0(collapse = "|")
+
+sudd_dat %<>%
+  mutate(year = str_extract(datum, needed_years)) 
+
+# Remove all weird direct democracy topics like electing Emperors
+sudd_dat %<>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Kaiser"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Staatsoberhaupt"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Praesident"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Staatsratsvorsitzender"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Parlament"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl KC6nig"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Regierungsverweser"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Konsul"))) %>% 
+   filter(!(str_detect(abstimmungstyp, "Wahl Senat"))) #%>% 
+   #filter(str_detect(abstimmungstyp, "Wahl"))
+
+# Fixing New Zealend because it has three times the same referendum
+sudd_dat %<>% 
+  filter(!(fragemuster == "4 Optionen als Alternativfrage, mit Stimmenuebertragung, 2. Zaehlung" | 
+           fragemuster == "3 Optionen als Alternativfrage, mit Stimmenuebertragung, 3. Zaehlung" |
+           fragemuster == "2 Optionen als Alternativfrage, mit Stimmenuebertragung, 4. Zaehlung")) 
+
+# filtering out inofficals
+sudd_dat %<>% 
+  filter(!(type == "inofficial"))
+
+sudd_dat %>% 
+  filter(bindingness == "ad hoc")
+
+# sudd_dat %>% 
+#   filter(str_detect(gebiet, "ypern"))
+
+sudd_dat %>%
+  select(entity, mehrheiten, bottom_up, abstimmungstyp, level, bindingness, type) %>%
+  select(type, bottom_up) %>%
+  table()
+
+sudd_dat_fin <- sudd_dat %>%
+  select(cntry, year, type,
+         entity, bottom_up, level,
+         bindingness, success, participation,
+         total_peeps, ratio, results, id)
+save(sudd_dat_fin, file = "data/sudd_dat_fin.Rdata")
+
+# sudd_dat %>% 
+#   select(mehrheiten) %>% 
+#   table()
+
+# countrycode::codelist %>% 
+# filter(str_detect(country.name.en, "ypr"))
+
+
+```
+
+## extracting the doppelte (1. Vorlage usw.)
+
+```{r}
+
+# load("data/sudd_dat.Rdata")
+load("data/vdems_start.Rdata")
+
+sudd_dat_checker <- sudd_dat %>% 
+  filter(str_detect(abstimmungstyp, "1.")) %>% 
+  mutate(n_init = lengths(str_extract_all(abstimmungstyp, "Initiative"))) %>% 
+  arrange(desc(n_init)) %>% 
+  mutate(cntryear = paste(cntry, year, sep = "_")) %>% 
+  select(-stimmberechtigte:-bundesstaat_der_usa)
+
+vdems_checker <- vdems_start %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(is.na(cntry), country_name, cntry)) %>%
+  mutate(cntryear = paste(cntry, year, sep = "_"))  %>% 
+  mutate(occ_referendum_vdem = v2ddyrrf) %>% 
+  mutate(occ_initiatives_vdem = v2ddyrci) %>% 
+  mutate(occ_plebiscite_vdem = v2ddyrpl) %>% 
+  mutate(occ_obligatory_vdem = v2ddyror) %>% 
+  mutate(occ_citizen_vdem = occ_referendum_vdem + occ_initiatives_vdem) %>% 
+  mutate(occ_state_vdem = occ_obligatory_vdem + occ_plebiscite_vdem) %>% 
+  mutate(obligatory_participation_q = ifelse(v2ddpartor > 0, 1, 0)) %>% 
+  mutate(obligatory_approval_q = ifelse(v2ddappor > 0, 1, 0)) %>% 
+  mutate(obligatory_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    obligatory_participation_q == 1 & obligatory_approval_q == 1 ~ 1,
+    obligatory_participation_q == 1 & obligatory_approval_q == 0 ~ 2,
+    obligatory_participation_q == 0 & obligatory_approval_q == 1 ~ 2,  
+    obligatory_participation_q == 0 & obligatory_approval_q == 0 ~ 3
+  )) %>% 
+  mutate(initiative_bindingness = v2ddlexci) %>% 
+  mutate(initiative_participation_q = ifelse(v2ddpartci > 0, 1, 0)) %>% 
+  mutate(initiative_approval_q = ifelse(v2ddapprci > 0, 1, 0)) %>% 
+  mutate(initiative_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    initiative_participation_q == 1 & initiative_approval_q == 1 ~ 1,
+    initiative_participation_q == 1 & initiative_approval_q == 0 ~ 2,
+    initiative_participation_q == 0 & initiative_approval_q == 1 ~ 2,  
+    initiative_participation_q == 0 & initiative_approval_q == 0 ~ 3
+  )) %>% 
+  mutate(referendum_bindingness = v2ddlexrf) %>% 
+  mutate(referendum_participation_q = ifelse(v2ddpartrf > 0, 1, 0)) %>% 
+  mutate(referendum_approval_q = ifelse(v2ddapprrf > 0, 1, 0)) %>% 
+  mutate(referendum_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    referendum_participation_q == 1 & referendum_approval_q == 1 ~ 1,
+    referendum_participation_q == 1 & referendum_approval_q == 0 ~ 2,
+    referendum_participation_q == 0 & referendum_approval_q == 1 ~ 2,  
+    referendum_participation_q == 0 & referendum_approval_q == 0 ~ 3
+  )) %>% 
+  mutate(plebiscite_bindingness = v2ddlexpl) %>% 
+  mutate(plebiscite_participation_q = ifelse(v2ddpartpl > 0, 1, 0)) %>% 
+  mutate(plebiscite_approval_q = ifelse(v2ddapprpl > 0, 1, 0)) %>% 
+  mutate(plebiscite_quorum = case_when(
+  # WHAT ABOUT ONLY APPROVAL??
+    plebiscite_participation_q == 1 & plebiscite_approval_q == 1 ~ 1,
+    plebiscite_participation_q == 1 & plebiscite_approval_q == 0 ~ 2,
+    plebiscite_participation_q == 0 & plebiscite_approval_q == 1 ~ 2,  
+    plebiscite_participation_q == 0 & plebiscite_approval_q == 0 ~ 3
+  )) %>% 
+  mutate(occ_all = v2ddyrall) %>% 
+  select(cntry, cntryear, occ_referendum_vdem, occ_initiatives_vdem, occ_plebiscite_vdem , occ_obligatory_vdem, occ_citizen_vdem, occ_state_vdem, initiative_bindingness, plebiscite_bindingness, referendum_bindingness)
+
+sudd_dat_checker %>% 
+  left_join(vdems_checker, by = "cntryear")
+
+sudd_dat_checker %>% 
+  left_join(vdems_checker, by = "cntryear") 
+
+```
+
+
+
+
+## testers
+
+```{r}
+sudd_dat %>% 
+  filter(bindingness == "ad hoc") %>% 
+  filter(bottom_up == 0)     
+
+sudd_dat %>% 
+  filter(str_detect(abstimmungstyp, "Option"))
+```
+
+# sudd data merger
+
+```{r}
+load("data/sudd_dat_fin.Rdata")
+
+sudd_dat_merger <- sudd_dat_fin %>% 
+  group_by(cntry, year, type) %>% 
+  tally() %>% 
+  arrange(cntry, year, type) %>% 
+  spread(type, n) %>% 
+  janitor::clean_names() %>% 
+  mutate(occ_referendum_sudd = ifelse(is.na(non_obligatory), 0, non_obligatory)) %>% 
+  mutate(occ_initiatives_sudd = ifelse(is.na(initiative), 0, initiative)) %>% 
+  mutate(occ_citizen_sudd = occ_referendum_sudd + occ_initiatives_sudd) %>% 
+  mutate(occ_obligatory_sudd = ifelse(is.na(obligatory), 0, obligatory)) %>% 
+  mutate(occ_plebiscite_sudd = ifelse(is.na(plebiscite), 0, plebiscite)) %>% 
+  mutate(occ_state_sudd = occ_obligatory_sudd + occ_plebiscite_sudd) %>% 
+  mutate(cntryear = paste(cntry, year, sep = "_")) %>% 
+  select(cntry, year, cntryear, 
+         occ_referendum_sudd, occ_initiatives_sudd, occ_citizen_sudd, 
+         occ_obligatory_sudd, occ_plebiscite_sudd, occ_state_sudd) %>% 
+  mutate(occ_all_sudd = occ_state_sudd + occ_citizen_sudd)
+
+sudd_dat_merger %>% 
+  group_by(cntry) %>% 
+  tally()
+
+save(sudd_dat_merger, file = "data/sudd_dat_merger.Rdata")
+```
+
+# democracy barometer data
+
+```{r}
+demdata <- haven::read_dta("data/democracybarometer.dta")
+
+demdata %<>% 
+  mutate(cntry = countrycode::countrycode(Country, "country.name", "country.name")) %>% 
+  mutate(year = Year) %>% 
+  select(cntry, year, Eff_DD, Dirdem, DD_Quora) %>% 
+  janitor::clean_names() 
+
+save(demdata, file = "data/demdata.Rdata")
+
+length(unique(demdata$cntry))
+
+
+```
+
+
+
+# vdem
+
+## Rules in Use
+
+```{r}
+load("data/vdems_start.Rdata")
+
+vdem_merger <- vdems_start %>% 
+  mutate(occ_referendum_vdem = v2ddyrrf) %>% 
+  mutate(occ_initiatives_vdem = v2ddyrci) %>% 
+  mutate(occ_plebiscite_vdem = v2ddyrpl) %>% 
+  mutate(occ_obligatory_vdem = v2ddyror) %>% 
+  mutate(occ_citizen_vdem = occ_referendum_vdem + occ_initiatives_vdem) %>% 
+  mutate(occ_state_vdem = occ_obligatory_vdem + occ_plebiscite_vdem) %>% 
+  mutate(cntry = countrycode::countrycode(country_name, "english.name", "english.name")) %>% 
+  mutate(year = as.character(year)) %>% 
+  #mutate(cntryear = paste(cntry, year, sep = "_")) %>% 
+  select(cntry, year, #cntryear, 
+         occ_referendum_vdem, occ_initiatives_vdem, 
+         occ_citizen_vdem, occ_plebiscite_vdem, occ_obligatory_vdem, occ_state_vdem)
+  
+vdem_merger %>% 
+  group_by(cntry) %>% 
+  count(occ_citizen_vdem) %>% 
+  filter(occ_citizen_vdem >= 1)
+
+vdem_merger %>% 
+  filter(country_text_id == "GBR") %>% 
+  mutate(plebiscite_bindingness = v2ddlexpl) %>% 
+  select(year, #cntryear, 
+         occ_referendum_vdem, occ_initiatives_vdem, 
+         occ_citizen_vdem, occ_plebiscite_vdem, plebiscite_bindingness, occ_obligatory_vdem, occ_state_vdem)
+  
+```
+
+# Freedom House
+
+```{r}
+# load("data/vdems_start.Rdata")
+# vdems_start %>% 
+#   filter(year == "2015") %>% 
+#   select(country_name, e_fh_ipolity2)
+
+fh_data <- data.frame(stringsAsFactors=FALSE,
+   country = c("Abkhazia*", "Afghanistan", "Albania", "Algeria",
+                         "Andorra", "Angola", "Antigua and Barbuda",
+                         "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+                         "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus",
+                         "Belgium", "Belize", "Benin", "Bhutan", "Bolivia",
+                         "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei",
+                         "Bulgaria", "Burkina Faso", "Burundi", "Cambodia",
+                         "Cameroon", "Canada", "Cape Verde", "Central African Republic",
+                         "Chad", "Chile", "China", "Colombia", "Comoros",
+                         "Congo (Brazzaville)", "Congo (Kinshasa)", "Costa Rica",
+                         "Cote d'Ivoire", "Crimea*", "Croatia", "Cuba", "Cyprus",
+                         "Czech Republic", "Denmark", "Djibouti", "Dominica",
+                         "Dominican Republic", "Ecuador", "Egypt", "El Salvador",
+                         "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji",
+                         "Finland", "France", "Gabon", "Gaza Strip*", "Georgia",
+                         "Germany", "Ghana", "Greece", "Grenada", "Guatemala",
+                         "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras",
+                         "Hong Kong*", "Hungary", "Iceland", "India",
+                         "Indian Kashmir*", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+                         "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan",
+                         "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan",
+                         "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya",
+                         "Liechtenstein", "Lithuania", "Luxembourg",
+                         "Macedonia", "Madagascar", "Malawi", "Malaysia", "Maldives",
+                         "Mali", "Malta", "Marshall Islands", "Mauritania",
+                         "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco",
+                         "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
+                         "Nagorno-Karabakh*", "Namibia", "Nauru", "Nepal",
+                         "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria",
+                         "North Korea", "Northern Cyprus*", "Norway", "Oman",
+                         "Pakistan", "Pakistani Kashmir*", "Palau", "Panama",
+                         "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland",
+                         "Portugal", "Puerto Rico", "Qatar", "Romania",
+                         "Russia", "Rwanda", "Samoa", "San Marino",
+                         "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles",
+                         "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+                         "Solomon Islands", "Somalia", "Somaliland*", "South Africa",
+                         "South Korea", "South Ossetia*", "South Sudan",
+                         "Spain", "Sri Lanka", "St. Kitts and Nevis", "St. Lucia",
+                         "St. Vincent and the Grenadines", "Sudan", "Suriname",
+                         "Swaziland", "Sweden", "Switzerland", "Syria", "Taiwan",
+                         "Tajikistan", "Tanzania", "Thailand", "The Gambia", "Tibet*",
+                         "Timor-Leste", "Togo", "Tonga", "Transnistria*",
+                         "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan",
+                         "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates",
+                         "United Kingdom", "United States", "Uruguay", "Uzbekistan",
+                         "Vanuatu", "Venezuela", "Vietnam", "West Bank*",
+                         "Western Sahara*", "Yemen", "Zambia", "Zimbabwe"),
+              Status = c("PF", "NF", "PF", "NF", "F", "NF", "F", "F", "PF",
+                         "F", "F", "NF", "F", "NF", "PF", "F", "NF", "F", "F",
+                         "F", "PF", "PF", "PF", "F", "F", "NF", "F", "PF", "NF",
+                         "NF", "NF", "F", "F", "NF", "NF", "F", "NF", "PF", "PF",
+                         "NF", "NF", "F", "PF", "NF", "F", "NF", "F", "F", "F",
+                         "NF", "F", "PF", "PF", "NF", "F", "NF", "NF", "F", "NF",
+                         "PF", "F", "F", "NF", "NF", "PF", "F", "F", "F", "F",
+                         "PF", "PF", "PF", "F", "PF", "PF", "PF", "F", "F", "F",
+                         "PF", "PF", "NF", "NF", "F", "F", "F", "F", "F", "NF",
+                         "NF", "PF", "F", "PF", "PF", "PF", "NF", "F", "PF", "PF",
+                         "PF", "NF", "F", "F", "F", "PF", "PF", "PF", "PF", "PF",
+                         "PF", "F", "F", "NF", "F", "PF", "F", "PF", "F", "F",
+                         "PF", "PF", "PF", "NF", "PF", "F", "F", "PF", "F", "F",
+                         "PF", "PF", "PF", "NF", "F", "F", "NF", "PF", "NF", "F",
+                         "F", "PF", "PF", "F", "PF", "F", "F", "F", "NF", "F",
+                         "NF", "NF", "F", "F", "F", "NF", "F", "F", "PF", "PF",
+                         "PF", "F", "F", "PF", "NF", "PF", "F", "F", "NF", "NF",
+                         "F", "PF", "F", "F", "F", "NF", "F", "NF", "F", "F", "NF",
+                         "F", "NF", "PF", "NF", "NF", "NF", "PF", "PF", "F",
+                         "NF", "F", "F", "PF", "NF", "F", "NF", "PF", "NF", "F", "F",
+                         "F", "NF", "F", "PF", "NF", "NF", "NF", "NF", "PF",
+                         "PF")
+)
+
+fh_data %<>% 
+  mutate(cntry = ifelse(str_detect(country, "\\*"), NA, country)) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(country == "Micronesia", "Micronesia (Federated States of)", cntry)) %>% 
+  mutate(fh = case_when(
+    Status == "PF" ~ "Partly Free",
+    Status == "F" ~ "Free",    
+    Status == "NF" ~ "Not Free"
+  )) %>% 
+  na.omit() %>% select(cntry, fh)
+  arrange(cntry)
+  
+save(fh_data, file = "data/fh_data.Rdata")
+
+
+fh_2005 <- data.frame(stringsAsFactors=FALSE,
+   country = c("Abkhazia*", "Afghanistan", "Albania", "Algeria",
+                         "Andorra", "Angola", "Antigua and Barbuda",
+                         "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+                         "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus",
+                         "Belgium", "Belize", "Benin", "Bhutan", "Bolivia",
+                         "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei",
+                         "Bulgaria", "Burkina Faso", "Burundi", "Cambodia",
+                         "Cameroon", "Canada", "Cape Verde", "Central African Republic",
+                         "Chad", "Chechnya*", "Chile", "China", "Colombia",
+                         "Comoros", "Congo (Brazzaville)", "Congo (Kinshasa)",
+                         "Costa Rica", "Cote d’Ivoire", "Croatia", "Cuba", "Cyprus",
+                         "Czech Republic", "Denmark", "Djibouti", "Dominica",
+                         "Dominican Republic", "Ecuador", "Egypt", "El Salvador",
+                         "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji",
+                         "Finland", "France", "Gabon", "Georgia", "Germany",
+                         "Ghana", "Greece", "Grenada", "Guatemala", "Guinea",
+                         "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hong Kong*",
+                         "Hungary", "Iceland", "India", "Indian Kashmir*",
+                         "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+                         "Israeli Occupied Territories*", "Italy", "Jamaica", "Japan",
+                         "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo*",
+                         "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon",
+                         "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
+                         "Luxembourg", "Macedonia", "Madagascar", "Malawi",
+                         "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands",
+                         "Mauritania", "Mauritius", "Mexico", "Micronesia",
+                         "Moldova", "Monaco", "Mongolia", "Morocco", "Mozambique",
+                         "Myanmar", "Nagorno-Karabakh*", "Namibia", "Nauru", "Nepal",
+                         "Netherlands", "New Zealand", "Nicaragua", "Niger",
+                         "Nigeria", "North Korea", "Northern Cyprus*", "Norway",
+                         "Oman", "Pakistan", "Pakistani Kashmir*", "Palau",
+                         "Palestinian Authority Administered Territories*", "Panama",
+                         "Papua New Guinea", "Paraguay", "Peru", "Philippines",
+                         "Poland", "Portugal", "Puerto Rico*", "Qatar", "Romania",
+                         "Russia", "Rwanda", "Samoa", "San Marino",
+                         "Sao Tome and Principe", "Saudi Arabia", "Senegal",
+                         "Serbia and Montenegro", "Seychelles", "Sierra Leone", "Singapore",
+                         "Slovakia", "Slovenia", "Solomon Islands", "Somalia",
+                         "South Africa", "South Korea", "Spain", "Sri Lanka",
+                         "St. Kitts and Nevis", "St. Lucia", "St. Vincent and the Grenadines",
+                         "Sudan", "Suriname", "Swaziland", "Sweden",
+                         "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania",
+                         "Thailand", "The Gambia", "Tibet*", "Timor-Leste", "Togo",
+                         "Tonga", "Transnistria", "Trinidad and Tobago", "Tunisia",
+                         "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine",
+                         "United Arab Emirates", "United Kingdom", "United States",
+                         "Uruguay", "Uzbekistan", "Vanuatu", "Venezuela",
+                         "Vietnam", "Western Sahara*", "Yemen", "Zambia", "Zimbabwe"),
+              Status = c("PF", "PF", "PF", "NF", "F", "NF", "F", "F", "PF",
+                         "F", "F", "NF", "F", "PF", "PF", "F", "NF", "F", "F",
+                         "F", "NF", "PF", "PF", "F", "F", "NF", "F", "PF", "PF",
+                         "NF", "NF", "F", "F", "PF", "NF", "NF", "F", "NF", "PF",
+                         "PF", "PF", "NF", "F", "NF", "F", "NF", "F", "F", "F",
+                         "PF", "F", "F", "PF", "NF", "F", "NF", "NF", "F", "PF",
+                         "PF", "F", "F", "PF", "PF", "F", "F", "F", "F", "PF",
+                         "NF", "PF", "PF", "NF", "PF", "PF", "F", "F", "F", "PF",
+                         "F", "NF", "NF", "F", "F", "NF", "F", "F", "F", "PF",
+                         "NF", "PF", "F", "PF", "PF", "PF", "NF", "F", "PF", "F",
+                         "PF", "NF", "F", "F", "F", "PF", "PF", "PF", "PF", "NF",
+                         "F", "F", "F", "PF", "F", "F", "F", "PF", "F", "F", "PF",
+                         "PF", "NF", "PF", "F", "F", "NF", "F", "F", "PF", "PF",
+                         "PF", "NF", "F", "F", "NF", "NF", "NF", "F", "PF", "F",
+                         "PF", "PF", "F", "PF", "F", "F", "F", "NF", "F", "NF",
+                         "NF", "F", "F", "F", "NF", "F", "F", "PF", "PF", "PF",
+                         "F", "F", "PF", "NF", "F", "F", "F", "PF", "F", "F", "F",
+                         "NF", "F", "NF", "F", "F", "NF", "F", "NF", "PF", "PF",
+                         "PF", "NF", "PF", "NF", "PF", "NF", "F", "NF", "PF",
+                         "NF", "F", "PF", "F", "NF", "F", "F", "F", "NF", "F",
+                         "PF", "NF", "NF", "PF", "PF", "NF")
+) %>% 
+  mutate(cntry = ifelse(str_detect(country, "\\*"), NA, country)) %>% 
+  mutate(cntry = countrycode::countrycode(cntry, "country.name", "country.name")) %>% 
+  mutate(cntry = ifelse(country == "Micronesia", "Micronesia (Federated States of)", cntry)) %>% 
+  mutate(fh = case_when(
+    Status == "PF" ~ "Partly Free",
+    Status == "F" ~ "Free",    
+    Status == "NF" ~ "Not Free"
+  )) %>% 
+  na.omit() %>% select(cntry, fh)
+  arrange(cntry)
+  
+save(fh_2005, file = "data/fh_2005.Rdata")
+
+
+
+```
+
+
+
+# merging
+
+```{r}
+give0 <- function(comein) {
+  comein <- ifelse(is.na(comein), 0, comein)
+}
+
+
+merged_wide <- vdem_merger %>%  
+  full_join(sudd_dat_merger, by = c("cntry", "year")) %>% 
+  mutate_at(vars(occ_referendum_sudd, 
+                 occ_initiatives_sudd, 
+                 occ_citizen_sudd,
+                 occ_obligatory_sudd,
+                 occ_plebiscite_sudd,
+                 occ_state_sudd), give0) %>% 
+  mutate(cntryear = paste(cntry, year, sep = "_")) %>% 
+  mutate(occ_all_sudd = occ_state_sudd + occ_citizen_sudd) %>% 
+  mutate(occ_all_vdem = occ_state_vdem + occ_citizen_vdem) 
+
+merged_wide %>% 
+  select(occ_plebiscite_vdem, occ_plebiscite_sudd) %>% 
+  na.omit() %>% 
+  cor()
+
+gg_dd <- merged_wide  %>% 
+  select(cntry, year, occ_citizen_vdem, occ_citizen_sudd) %>% 
+  gather(dd_institution, count, -cntry, -year) %>% 
+  mutate(dataset = ifelse(str_detect(dd_institution, "vdem"), "vdem", "sudd")) %>% 
+  mutate(year = as.numeric(year)) 
+
+#group_by(dayMonthYear) %.% 
+
+
+gg_dd %>% 
+  filter(year >= 1900) %>% 
+ # filter(cntry == "Germany") %>%   
+ # mutate(regions = countrycode(cntry, "country.name", "region")) %>% 
+  group_by(cntry, year, dataset) %>% 
+  summarise(n = n()) %>% 
+  mutate(cumcount = cumsum(n))  %>% 
+  ungroup() %>% 
+  ggplot(aes(year, cumcount, colour = cntry)) +
+  geom_line() + 
+  guides(colour = F) +
+  facet_wrap(~dataset)
+
+plotly::ggplotly()
+
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  ggplot(aes(occ_citizen_vdem, occ_citizen_sudd)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide %>% 
+                             filter(occ_citizen_vdem > 4 &occ_citizen_sudd > 4),
+    aes(label = cntryear)) +
+  ggpubr::stat_cor()
+    
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  group_by(cntry) %>% 
+  count(occ_citizen_vdem) %>% 
+  filter(occ_citizen_vdem >= 1)
+
+merged_wide %>% 
+  group_by(cntry) %>% 
+  count(occ_citizen_sudd) %>% 
+  filter(occ_citizen_sudd >= 1)
+    
+vdem_merger %>%  
+  full_join(sudd_dat_merger, by = c("cntry", "year")) %>% 
+  mutate_at(vars(occ_referendum_sudd, occ_initiatives_sudd, occ_citizen_sudd), give0) %>% 
+  select(cntry, year, occ_citizen_vdem, occ_citizen_sudd) %>% 
+  mutate(cumcount = cumsum(occ_citizen_vdem))  %>% 
+  ggplot(aes(year, cumcount)) +
+  geom_line() +
+  guides(colour = F)
+
+  
+```
+
+## plebiscites and obligatory referendas
+
+```{r}
+merged_wide %>% 
+  select(occ_plebiscite_vdem, occ_plebiscite_sudd) %>% 
+  na.omit() %>% 
+  cor()
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  ggplot(aes(occ_plebiscite_vdem, occ_plebiscite_sudd)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide %>% 
+                             filter(occ_plebiscite_vdem >= 4 & occ_plebiscite_sudd >= 4),
+    aes(label = cntryear)) +
+  ggpubr::stat_cor()
+
+
+
+# validation
+vdem_merger %>% 
+  filter(cntry == "Ecuador") %>% 
+  filter(year > 1993)
+
+sudd_dat_merger %>% 
+  filter(cntry == "Ecuador") %>% 
+  filter(year > 1993)
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  ggplot(aes(occ_obligatory_vdem, occ_obligatory_sudd)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide %>% 
+                             filter(occ_obligatory_vdem >= 4 &occ_obligatory_sudd >= 4),
+    aes(label = cntryear)) +
+  ggpubr::stat_cor()
+    
+merged_wide %>% 
+  select(occ_state_sudd, occ_state_vdem) %>% 
+  na.omit() %>% 
+  cor()
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  ggplot(aes(occ_state_sudd, occ_state_vdem)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide %>% 
+                             filter(occ_state_sudd >= 6 & occ_state_vdem >= 6),
+    aes(label = cntryear)) +
+  ggpubr::stat_cor()
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  mutate(occ_all_sudd = occ_state_sudd + occ_citizen_sudd) %>% 
+  mutate(occ_all_vdem = occ_state_vdem + occ_citizen_vdem) %>% 
+  filter(!(occ_all_sudd == occ_all_vdem)) %>% 
+  select(cntry, year, occ_all_sudd, occ_all_vdem) %>% 
+  arrange(year)
+
+
+merged_wide %>% 
+  filter(year >= 1900) %>% 
+  ggplot(aes(occ_all_sudd, occ_all_vdem)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide %>% 
+                             filter(occ_all_sudd >= 10 & occ_all_vdem >= 10),
+    aes(label = cntryear)) +
+  ggpubr::stat_cor()
+
+merged_wide_summed <- merged_wide %>% 
+  filter(year >= 1900) %>%
+  group_by(cntry) %>% 
+  summarize(occ_state_vdem = sum(occ_state_vdem, na.rm = T),
+            occ_citizen_vdem = sum(occ_citizen_vdem, na.rm = T)) %>% 
+  filter(cntry != "Switzerland")
+
+merged_wide_summed %>% 
+  ggplot(aes(occ_state_vdem, occ_citizen_vdem)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide_summed %>% 
+                              filter(occ_state_vdem >= 10 | occ_citizen_vdem >= 10),
+     aes(label = cntry)) +
+  ggpubr::stat_cor()
+
+
+
+merged_wide_summed <- merged_wide %>% 
+  filter(year >= 1900) %>%
+  group_by(cntry) %>% 
+  summarize(occ_state_sudd = sum(occ_state_sudd, na.rm = T),
+            occ_citizen_sudd = sum(occ_citizen_sudd, na.rm = T)) %>% 
+  filter(cntry != "Switzerland")
+
+merged_wide_summed %>% 
+  ggplot(aes(occ_state_sudd, occ_citizen_sudd)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  ggrepel::geom_text_repel(data = merged_wide_summed %>% 
+                              filter(occ_state_sudd >= 10 | occ_citizen_sudd >= 10),
+     aes(label = cntry)) +
+  ggpubr::stat_cor()
+```
+
+
+## Visualization
+
+```{r}
+years <- 1776:2018 %>%
+  as.character() %>%
+  paste0(collapse = "|")
+
+sudd_dat %<>%
+  mutate(date = str_extract(datum, years)) %>%
+  group_by(gebiet, date) %>%
+  tally() %>%
+  mutate(date = as.numeric(date))
+
+
+sudd_dat %>%
+  ggplot(aes(x = date, n, colour = gebiet)) +
+  geom_line() +
+  guides(colour = F)
+
+sudd_dat_fin %>%
+  group_by(cntry) %>%
+  mutate(cumn = cumsum(n)) %>%
+  filter(gebiet != "Schweiz") %>%
+  ggplot(aes(x = year, cumn, colour = cntry)) +
+  geom_line() +
+  guides(colour = F)
+```
+
+## GLM Model
+
+```{r}
+fit1 <- glm(success ~ ratio, data = sudd_dat)
+
+sjPlot::plot_model(fit1, type = "eff", terms = "ratio")
+
+sjPlot::sjp.glm(fit1, type = "dots")
+
+sudd_dat %>% 
+  cbind(data.frame(fitted = predict(fit1, sudd_dat))) %>% 
+  filter(fitted > 1)
+
+max(sudd_dat$fitted, na.rm = T)
+
+sudd_dat %>% 
+   ggplot(aes(ratio, fitted)) +
+   geom_smooth()
+```
+

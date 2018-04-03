@@ -1,0 +1,70 @@
+---
+geometry: "left=2.5cm,right=4cm,top=2.5cm,bottom=2cm"
+fontsize: "18pt"
+title: "Direct Democracy in Europe"
+subtitle: "Concept and Questions"
+author: "Fabio Votta and Rosa Seitz"
+date: "26 February 2017"
+output: pdf_document
+header-includes:
+- \usepackage{microtype}
+- \usepackage{lmodern}
+- \usepackage[ngerman, english]{babel}
+---
+
+\pagenumbering{gobble}
+
+**Research question**
+
+Has direct democracy an effect on satisfaction with the way democracy works?
+
+**Theory**
+
+Easton, Fuchs, etc. -> political support
+
+**Hypotheses**
+
+H1: Direct democracy has a positive effect on individual satisfaction with democracy.
+
+H2: The H1-effect is moderated by...
+
+1. political apathy (Operationalization -> voters (compared to non-voters), problem: occasional voters can not be separated)
+2. socio-economic status/income
+3. political interest (problem: might be influenced by DD & ambiguously related to SWD -> "assertive citizens"") 
+4. party identification
+ 
+**Data & Operationalization**
+
+ESS - without Israel/Russia?, most recent data (2010 - 2016)
+
+Method: MLA
+
+1. Direct Dmeocracy 
+  + IDEA
+    Number of DD provisions (not usage) on national and local level 
+  + V-DEM
+    Participatory component index
+    
+  + c2d
+    Number of initiatives/referendums in the past on national level
+    Regional level posiible, but data incomplete & not systematically gathered & no controls
+    
+    
+2. Controls
+  + Level 1
+    - Education, Age, Gender
+    - Satisfaction with th economy
+    - Household income 
+    - Unemployment
+    - Possibly Post-materialism 
+  + Level 2
+    (Not all possible, maybe seperate regressions)
+    - GDP, bzw. GDP-Growth
+    - Inflation
+    - ENOP
+    - Age of democracy
+    - Unemployment rate
+    - Dummy: former communist country
+    - Dummy: east-west europe
+ 
+ 
